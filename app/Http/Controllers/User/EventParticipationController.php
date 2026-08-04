@@ -208,14 +208,19 @@ class EventParticipationController extends Controller
             $registration->save();
         }
 
+        $feedbackUrl = $event->link_feedback;
+        if (!preg_match('~^(?:f|ht)tps?://~i', $feedbackUrl)) {
+            $feedbackUrl = 'http://' . $feedbackUrl;
+        }
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'redirect_url' => $event->link_feedback,
+                'redirect_url' => $feedbackUrl,
             ]);
         }
 
-        return redirect()->away($event->link_feedback);
+        return redirect()->away($feedbackUrl);
     }
 
     public function submitAttendance(Event $event, Request $request)

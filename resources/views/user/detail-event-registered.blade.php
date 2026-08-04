@@ -1222,7 +1222,7 @@
                     if (strtolower(trim($event->jenis ?? '')) !== 'lomba') {
                         $stepStates['Attendance'] = $attendanceSubmitted;
                     }
-                    $stepStates['Feedback'] = $hasFeedback;
+                    $stepStates['Feedback'] = $hasFeedback || (isset($registration) && $registration->has_link_feedback);
                     $stepStates['Certificate'] = $certificateUnlocked;
                 @endphp
                 <section class="progress-box">
@@ -2475,7 +2475,7 @@
                     </div>
                     <div class="resource-value">
                         <h6>Feedback and Ratings</h6>
-                        @if(isset($hasFeedback) && $hasFeedback)
+                        @if((isset($hasFeedback) && $hasFeedback) || (isset($registration) && $registration->has_link_feedback))
                             <p class="text-success" style="font-weight:600;">Done Successfully</p>
                         @elseif($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
                             <p style="width: 70%;" class="text-primary">Please submit your feedback</p>
@@ -2497,7 +2497,7 @@
                     @elseif($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
-                            @if(isset($hasFeedback) && $hasFeedback)
+                            @if((isset($hasFeedback) && $hasFeedback) || (isset($registration) && $registration->has_link_feedback))
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                                     stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                     aria-label="Feedback berhasil">
@@ -2538,7 +2538,7 @@
                 </div>
                 <div class="col-md-6" style="background-color: white; padding: 1rem;">
                     <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
-                    @if(isset($hasFeedback) && $hasFeedback)
+                    @if((isset($hasFeedback) && $hasFeedback) || (isset($registration) && $registration->has_link_feedback))
                         <div class="text-center text-muted py-3" style="font-size: 0.9rem;">
                             Feedback already submitted and cannot be sent again.
                         </div>
@@ -3625,35 +3625,28 @@
                 event.preventDefault();
 
                 const trackUrl = link.getAttribute('href');
-                const targetUrl = link.getAttribute('data-feedback-url');
-                const popup = window.open('', '_blank', 'noopener');
+                let targetUrl = link.getAttribute('data-feedback-url');
+                if (targetUrl && !/^https?:\/\//i.test(targetUrl)) {
+                    targetUrl = 'http://' + targetUrl;
+                }
+                
+                // Langsung buka tab baru agar tidak diblock browser dan tidak about:blank
+                window.open(targetUrl, '_blank');
 
                 try {
-                    const response = await fetch(trackUrl, {
+                    await fetch(trackUrl, {
                         method: 'GET',
+                        credentials: 'same-origin',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json',
                         },
                     });
-                    const payload = await response.json();
-                    const redirectUrl = payload.redirect_url || targetUrl;
-
-                    if (popup && redirectUrl) {
-                        popup.location.href = redirectUrl;
-                    } else if (redirectUrl) {
-                        window.location.href = redirectUrl;
-                    }
-
+                    
+                    // Reload halaman lama (parent) untuk memperbarui status centang
                     window.location.reload();
                 } catch (error) {
-                    if (popup && targetUrl) {
-                        popup.location.href = targetUrl;
-                    } else if (targetUrl) {
-                        window.location.href = targetUrl;
-                    } else {
-                        window.location.href = trackUrl;
-                    }
+                    console.error('Error tracking feedback link', error);
                 }
             });
         });
