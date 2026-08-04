@@ -54,6 +54,7 @@ class Event extends Model
         'description',
         'terms_and_conditions',
         'location',
+        'link_feedback',
         'price',
         'price_offline',
         'price_online',

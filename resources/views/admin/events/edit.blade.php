@@ -358,6 +358,13 @@
                                 <small class="form-text {{ $editLocMode === 'hybrid' ? 'd-none' : '' }}" id="price-single-hint">Enter numbers only; automatically formatted with thousands separators. Enter 0 for free.</small>
                             </div>
                             <div class="mb-3">
+                                <label for="linkFeedback" class="form-label fw-semibold">Link Feedback (Opsional)</label>
+                                <input type="text" id="linkFeedback" name="link_feedback" class="form-control"
+                                    value="{{ old('link_feedback', $event->link_feedback) }}">
+                                <small class="form-text {{ $editLocMode === 'hybrid' ? 'd-none' : '' }}" id="price-single-hint">Fill this section for link like google form or something.</small>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="diskon" class="form-label fw-semibold">Discount (%)</label>
                                 <input type="number" name="discount_percentage" id="diskon" class="form-control" min="0"
                                     max="100" step="1" value="{{ old('discount_percentage', $event->discount_percentage) }}"

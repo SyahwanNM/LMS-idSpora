@@ -21,6 +21,7 @@ class EventRegistration extends Model
         'certificate_issued_at',
         'feedback_text',
         'feedback_submitted_at',
+        'has_link_feedback',
         'total_price', 
         'payment_proof',
         'payment_verified_at',
@@ -51,6 +52,7 @@ class EventRegistration extends Model
     protected $casts = [
         'certificate_issued_at' => 'datetime',
         'feedback_submitted_at' => 'datetime',
+        'has_link_feedback' => 'boolean',
         'attended_at' => 'datetime',
         'attendance_scan_qr' => 'datetime',
         'submission_uploaded_at' => 'datetime',

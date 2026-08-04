@@ -336,6 +336,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/register', [\App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
+    Route::get('/events/{event}/feedback-link', [\App\Http\Controllers\User\EventParticipationController::class, 'openFeedbackLink'])->name('events.feedback-link');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\User\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
     // Dedicated scan page for event QR (auth, require registration)
     Route::get('/events/{event}/scan', function (\Illuminate\Http\Request $request, \App\Models\Event $event) {

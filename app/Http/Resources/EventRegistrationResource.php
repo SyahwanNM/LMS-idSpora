@@ -28,6 +28,7 @@ class EventRegistrationResource extends JsonResource
             'certificate_issued_at' => optional($this->certificate_issued_at)->toISOString(),
             'feedback_text' => $this->feedback_text,
             'feedback_submitted_at' => optional($this->feedback_submitted_at)->toISOString(),
+            'has_link_feedback' => (bool) $this->has_link_feedback,
             'created_at' => optional($this->created_at)->toISOString(),
             'updated_at' => optional($this->updated_at)->toISOString(),
         ];

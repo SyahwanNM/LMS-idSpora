@@ -184,6 +184,40 @@ class EventParticipationController extends Controller
         return redirect()->back()->with('success', 'Terima kasih atas feedback Anda! Sertifikat telah terbuka.');
     }
 
+    public function openFeedbackLink(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $registration = EventRegistration::where('event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$registration || $registration->status !== 'active') {
+            return redirect()->route('events.registered.detail', $event)->with('error', 'Anda harus terdaftar untuk membuka link feedback.');
+        }
+
+        if (empty($event->link_feedback)) {
+            return redirect()->route('events.registered.detail', $event)->with('error', 'Link feedback belum tersedia.');
+        }
+
+        if (!$registration->has_link_feedback) {
+            $registration->has_link_feedback = true;
+            $registration->save();
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'redirect_url' => $event->link_feedback,
+            ]);
+        }
+
+        return redirect()->away($event->link_feedback);
+    }
+
     public function submitAttendance(Event $event, Request $request)
     {
         $user = Auth::user();

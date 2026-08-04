@@ -1060,6 +1060,13 @@
                                     <small class="text-muted mt-1 d-block" id="price-single-hint">Use only numbers. Automatically formatted.</small>
                                 </div>
                                 <div class="mb-3">
+                                    <label for="linkFeedback" class="form-label fw-semibold">Link Feedback (Opsional)</label>
+                                    <div id="price-single-wrap">
+                                        <input type="text" id="linkFeedback" class="form-control" name="link_feedback" value="{{ old('link_feedback') }}">
+                                    </div>
+                                    <small class="text-muted mt-1 d-block" id="price-single-hint">Fiil this section for link like google form or something.</small>
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label fw-semibold">Metode Pembayaran</label>
                                     <div class="d-flex gap-3 align-items-center mb-2">
                                         <div class="form-check form-switch">

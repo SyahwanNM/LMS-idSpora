@@ -1185,7 +1185,9 @@
                     }
                     // Attendance via QR verification (check-in)
                     $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
-                    $hasCertificate = $registration && $registration->certificate_issued_at;
+                    $hasLinkFeedback = $registration && (bool) ($registration->has_link_feedback ?? false);
+                    $hasCertificate = $registration && ($registration->certificate_issued_at || $hasLinkFeedback);
+                    $certificateUnlocked = $registration && ($hasFeedback || $hasLinkFeedback);
                     $attendanceSubmitted = false;
                     if ($registration) {
                         $status = strtolower((string) ($registration->attendance_status ?? ''));
@@ -1221,7 +1223,7 @@
                         $stepStates['Attendance'] = $attendanceSubmitted;
                     }
                     $stepStates['Feedback'] = $hasFeedback;
-                    $stepStates['Certificate'] = $hasCertificate;
+                    $stepStates['Certificate'] = $certificateUnlocked;
                 @endphp
                 <section class="progress-box">
                     <h5>Your Progress</h5>
@@ -2339,7 +2341,7 @@
 
                 
                 <div
-                    class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
+                    class="resource-card {{ (isset($isRegistered) && $isRegistered && ($hasCertificate || $hasLinkFeedback)) ? '' : 'locked' }}">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-award" viewBox="0 0 16 16">
@@ -2352,7 +2354,7 @@
                     <div class="resource-value">
                         <h6>Certificate</h6>
                         @if(isset($isRegistered) && $isRegistered)
-                            @if(isset($hasFeedback) && $hasFeedback)
+                            @if(isset($hasCertificate) && $hasCertificate)
                                 <div class="box-resources-sertif">
                                     <p>Silakan preview / unduh.</p>
                                     <div class="box-sertif-after-event">
@@ -2374,7 +2376,7 @@
                             @elseif($eventIsFinished)
                                 <p>Available after feedback</p>
                             @else
-                                <p>Available after send feedback.</p>
+                                <p>Available after opening the feedback link.</p>
                             @endif
                         @else
                             <p>Available after the event ends.</p>
@@ -2482,7 +2484,17 @@
                         @endif
                     </div>
 
-                    @if($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
+                    @if($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay) && $event->link_feedback != null)
+                        <a href="{{ route('events.feedback-link', $event) }}" class="link-share js-feedback-link" data-feedback-url="{{ $event->link_feedback }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                aria-label="Buka link">
+                                <path d="M15 3h6v6"></path>
+                                <path d="M10 14L21 3"></path>
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            </svg>
+                        </a>
+                    @elseif($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
                             @if(isset($hasFeedback) && $hasFeedback)
@@ -3608,6 +3620,44 @@
     </div>
 
     <script>
+        document.querySelectorAll('.js-feedback-link').forEach((link) => {
+            link.addEventListener('click', async (event) => {
+                event.preventDefault();
+
+                const trackUrl = link.getAttribute('href');
+                const targetUrl = link.getAttribute('data-feedback-url');
+                const popup = window.open('', '_blank', 'noopener');
+
+                try {
+                    const response = await fetch(trackUrl, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                    });
+                    const payload = await response.json();
+                    const redirectUrl = payload.redirect_url || targetUrl;
+
+                    if (popup && redirectUrl) {
+                        popup.location.href = redirectUrl;
+                    } else if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    }
+
+                    window.location.reload();
+                } catch (error) {
+                    if (popup && targetUrl) {
+                        popup.location.href = targetUrl;
+                    } else if (targetUrl) {
+                        window.location.href = targetUrl;
+                    } else {
+                        window.location.href = trackUrl;
+                    }
+                }
+            });
+        });
+
         // Toggle feedback section visibility
         function toggleFeedbackSection() {
             const section = document.getElementById('feedbackSection');

@@ -633,6 +633,8 @@ class CertificateController extends Controller
 
     public function isCertificateReady(Event $event, EventRegistration $registration = null) {
         if ($registration && $registration->certificate_issued_at) return true;
+
+        if ($registration && !empty($registration->has_link_feedback)) return true;
         
         // Jika user sudah absen hadir, sertifikat boleh diakses tanpa menunggu event selesai
         if ($registration) {
