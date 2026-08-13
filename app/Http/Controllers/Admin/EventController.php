@@ -1765,7 +1765,7 @@ class EventController extends Controller
         $isTelkom = false;
         if ($universityOrigin !== '') {
             $lowerUniv = strtolower($universityOrigin);
-            if (str_contains($lowerUniv, 'telkom university') || str_contains($lowerUniv, 'universitas telkom')) {
+            if (str_contains($lowerUniv, 'telkom university') || str_contains($lowerUniv, 'universitas telkom bandung') || str_contains($lowerUniv, 'universitas telkom jakarta') || str_contains($lowerUniv, 'universitas telkom bandung')) {
                 $isTelkom = true;
             }
         }

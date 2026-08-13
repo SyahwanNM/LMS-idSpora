@@ -214,12 +214,16 @@
                             <label class="form-label-custom">Company Name/Organization <span style="color:#ef4444;">*</span></label>
                             @php
                                 $presetInstitution = trim(auth()->user()->institution ?? '');
-                                $isPresetTelkom = strcasecmp($presetInstitution, 'Telkom University') === 0 || strcasecmp($presetInstitution, 'Universitas Telkom') === 0;
+                                $normalizedPresetInstitution = strtolower($presetInstitution);
+                                $isPresetTelkom = str_contains($normalizedPresetInstitution, 'telkom university')
+                                    || str_contains($normalizedPresetInstitution, 'universitas telkom');
                                 $showCustomInput = !empty($presetInstitution) && !$isPresetTelkom;
                             @endphp
                             <select class="form-control-custom" id="university_origin_select" style="padding: 10px 14px; background: #fff;" required>
                                 <option value="" disabled {{ empty($presetInstitution) ? 'selected' : '' }}>-- Pilih Perguruan Tinggi / Organisasi --</option>
-                                <option value="Telkom University" {{ $isPresetTelkom ? 'selected' : '' }}>Telkom University</option>
+                                <option value="Telkom University Bandung" {{ $isPresetTelkom ? 'selected' : '' }}>Telkom University Bandung</option>
+                                <option value="Telkom University Jakarta" {{ $isPresetTelkom ? 'selected' : '' }}>Telkom University Jakarta</option>
+                                <option value="Telkom University Purwokerto" {{ $isPresetTelkom ? 'selected' : '' }}>Telkom University Purwokerto</option>
                                 <option value="other" {{ $showCustomInput ? 'selected' : '' }}>Lainnya / Other</option>
                             </select>
                             
@@ -922,10 +926,24 @@
         const isEventFreeBase = isFree;
         const isFreeTelkomAllowed = @json(isset($event) && (bool)$event->is_free_telkom);
 
+        function isTelkomInstitution(value) {
+            const normalized = String(value || '').trim().toLowerCase();
+            if (!normalized) return false;
+
+            return normalized.includes('telkom university')
+                || normalized.includes('universitas telkom')
+                || normalized.includes('telkom university bandung')
+                || normalized.includes('telkom university jakarta')
+                || normalized.includes('telkom university purwokerto')
+                || normalized.includes('universitas telkom bandung')
+                || normalized.includes('universitas telkom jakarta')
+                || normalized.includes('universitas telkom purwokerto');
+        }
+
         function recalculatePriceAndFreeStatus() {
-            const univVal = universityInput ? universityInput.value.trim().toLowerCase() : '';
-            const isTelkom = univVal.includes('telkom university') || univVal.includes('universitas telkom');
-            
+            const univVal = universityInput ? universityInput.value : '';
+            const isTelkom = isTelkomInstitution(univVal);
+
             if (isFreeTelkomAllowed && isTelkom) {
                 isFree = true;
             } else {
@@ -1078,11 +1096,21 @@
         
         if (selectEl && customInputEl) {
             selectEl.addEventListener('change', function() {
-                if (this.value === 'Telkom University') {
-                    customInputEl.value = 'Telkom University';
+                const selectedValue = this.value || '';
+                const telkomOptions = [
+                    'Telkom University Bandung',
+                    'Telkom University Jakarta',
+                    'Telkom University Purwokerto',
+                    'Universitas Telkom Bandung',
+                    'Universitas Telkom Jakarta',
+                    'Universitas Telkom Purwokerto'
+                ];
+
+                if (telkomOptions.includes(selectedValue)) {
+                    customInputEl.value = selectedValue;
                     customInputEl.style.display = 'none';
                     customInputEl.required = false;
-                } else if (this.value === 'other') {
+                } else if (selectedValue === 'other') {
                     customInputEl.value = customInputEl.dataset.presetValue || '';
                     customInputEl.style.display = '';
                     customInputEl.required = true;
@@ -1093,11 +1121,11 @@
                 }
                 recalculatePriceAndFreeStatus();
             });
-            
+
             ['input','change','keyup','blur'].forEach(evt => {
                 customInputEl.addEventListener(evt, recalculatePriceAndFreeStatus);
             });
-            
+
             recalculatePriceAndFreeStatus();
         }
 
