@@ -214,23 +214,31 @@
                             <label class="form-label-custom">Company Name/Organization <span style="color:#ef4444;">*</span></label>
                             @php
                                 $presetInstitution = trim(auth()->user()->institution ?? '');
-                                $normalizedPresetInstitution = strtolower($presetInstitution);
-                                $isPresetTelkom = str_contains($normalizedPresetInstitution, 'telkom university')
-                                    || str_contains($normalizedPresetInstitution, 'universitas telkom');
-                                $showCustomInput = !empty($presetInstitution) && !$isPresetTelkom;
+                                $presetInstitutionLower = strtolower($presetInstitution);
+
+                                $presetTelkomValue = null;
+                                if (str_contains($presetInstitutionLower, 'telkom university bandung') || str_contains($presetInstitutionLower, 'universitas telkom bandung')) {
+                                    $presetTelkomValue = 'Telkom University Bandung';
+                                } elseif (str_contains($presetInstitutionLower, 'telkom university jakarta') || str_contains($presetInstitutionLower, 'universitas telkom jakarta')) {
+                                    $presetTelkomValue = 'Telkom University Jakarta';
+                                } elseif (str_contains($presetInstitutionLower, 'telkom university purwokerto') || str_contains($presetInstitutionLower, 'universitas telkom purwokerto')) {
+                                    $presetTelkomValue = 'Telkom University Purwokerto';
+                                }
+
+                                $showCustomInput = !empty($presetInstitution) && $presetTelkomValue === null;
                             @endphp
                             <select class="form-control-custom" id="university_origin_select" style="padding: 10px 14px; background: #fff;" required>
                                 <option value="" disabled {{ empty($presetInstitution) ? 'selected' : '' }}>-- Pilih Perguruan Tinggi / Organisasi --</option>
-                                <option value="Telkom University Bandung" {{ $isPresetTelkom ? 'selected' : '' }}>Telkom University Bandung</option>
-                                <option value="Telkom University Jakarta" {{ $isPresetTelkom ? 'selected' : '' }}>Telkom University Jakarta</option>
-                                <option value="Telkom University Purwokerto" {{ $isPresetTelkom ? 'selected' : '' }}>Telkom University Purwokerto</option>
+                                <option value="Telkom University Bandung" {{ $presetTelkomValue === 'Telkom University Bandung' ? 'selected' : '' }}>Telkom University Bandung</option>
+                                <option value="Telkom University Jakarta" {{ $presetTelkomValue === 'Telkom University Jakarta' ? 'selected' : '' }}>Telkom University Jakarta</option>
+                                <option value="Telkom University Purwokerto" {{ $presetTelkomValue === 'Telkom University Purwokerto' ? 'selected' : '' }}>Telkom University Purwokerto</option>
                                 <option value="other" {{ $showCustomInput ? 'selected' : '' }}>Lainnya / Other</option>
                             </select>
-                            
-                            <input type="text" class="form-control-custom mt-2" name="university_origin" id="university_origin_custom" 
-                                   value="{{ $presetInstitution }}" 
-                                   placeholder="Ketik nama institusi / organisasi Anda" 
-                                   data-preset-value="{{ $isPresetTelkom ? '' : $presetInstitution }}"
+
+                            <input type="text" class="form-control-custom mt-2" name="university_origin" id="university_origin_custom"
+                                   value="{{ $presetInstitution }}"
+                                   placeholder="Ketik nama institusi / organisasi Anda"
+                                   data-preset-value="{{ $presetTelkomValue === null ? $presetInstitution : '' }}"
                                    style="{{ $showCustomInput ? '' : 'display: none;' }}" required>
                         </div>
 
