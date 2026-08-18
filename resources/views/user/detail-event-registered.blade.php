@@ -4406,6 +4406,8 @@
                                 class="form-select rounded-3 py-2" required
                                 style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
                                 <option value="" disabled selected>Select educational background</option>
+                                <option value="Doctoral Degree">Doctoral Degree</option>
+                                <option value="Master Degree">Master Degree</option>
                                 <option value="Bachelor's Degree">Bachelor's Degree</option>
                                 <option value="Diploma">Diploma</option>
                                 <option value="other">Other</option>
@@ -4533,6 +4535,8 @@
                                 class="form-select rounded-3 py-2" required
                                 style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
                                 <option value="" disabled selected>Select educational background</option>
+                                <option value="Doctoral Degree">Doctoral Degree</option>
+                                <option value="Master Degree">Master Degree</option>
                                 <option value="Bachelor's Degree">Bachelor's Degree</option>
                                 <option value="Diploma">Diploma</option>
                                 <option value="other">Other</option>
