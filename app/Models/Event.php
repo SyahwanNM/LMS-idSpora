@@ -97,10 +97,15 @@ class Event extends Model
         'finalist_payment_start',
         'finalist_payment_end',
         'lomba_kategori',
+        'lomba_stage_count',
         'max_team_members',
         'is_free_telkom',
         'show_feedback',
         'file_tambahan',
+    ];
+
+    protected $attributes = [
+        'lomba_stage_count' => 2,
     ];
 
     protected $casts = [
@@ -132,6 +137,7 @@ class Event extends Model
         'price_stage2' => 'decimal:2',
         'finalist_payment_start' => 'datetime',
         'finalist_payment_end' => 'datetime',
+        'lomba_stage_count' => 'integer',
         'is_free_telkom' => 'boolean',
     ];
 

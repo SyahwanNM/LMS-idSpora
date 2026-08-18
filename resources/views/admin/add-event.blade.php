@@ -916,13 +916,26 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="form-text">Choose the event type.</div>
+                                    <div class="form-text">Choose event type for this event.</div>
                                 </div>
 
                                 {{-- Competition settings block — shown only when event type is Lomba --}}
                                 <div id="lombaSettingsContainer" class="p-3 border rounded mb-3 bg-light" style="{{ old('jenis') === 'Lomba' ? '' : 'display: none;' }}">
                                     <h6 class="fw-bold mb-3 text-primary" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🏆 Pengaturan Kompetisi / Lomba</h6>
                                     <div class="row g-2">
+                                        @php
+                                            $defaultStageCount = (int) old('lomba_stage_count', 2);
+                                            if (!in_array($defaultStageCount, [1, 2], true)) {
+                                                $defaultStageCount = 2;
+                                            }
+                                        @endphp
+                                        <div class="col-md-6 mb-2">
+                                            <label for="lomba_stage_count" class="form-label small fw-semibold mb-1">Jumlah Stage Lomba <span class="text-danger">*</span></label>
+                                            <select name="lomba_stage_count" id="lomba_stage_count" class="form-select form-select-sm" required>
+                                                <option value="2" {{ $defaultStageCount === 2 ? 'selected' : '' }}>2 Stage</option>
+                                                <option value="1" {{ $defaultStageCount === 1 ? 'selected' : '' }}>1 Stage</option>
+                                            </select>
+                                        </div>
                                         <div class="col-md-6 mb-2">
                                             <label for="start_submission" class="form-label small fw-semibold mb-1">Mulai Pengiriman Submission <span class="text-danger">*</span></label>
                                             <input type="datetime-local" name="start_submission" id="start_submission" class="form-control form-control-sm" value="{{ old('start_submission') }}">
@@ -935,17 +948,33 @@
                                             <label for="announcement_date" class="form-label small fw-semibold mb-1">Tanggal Pengumuman Kelolosan <span class="text-danger">*</span></label>
                                             <input type="datetime-local" name="announcement_date" id="announcement_date" class="form-control form-control-sm" value="{{ old('announcement_date') }}">
                                         </div>
-                                        <div class="col-md-6 mb-2">
-                                            <label for="until_submission_2" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Kedua/Lanjutan <span class="text-danger">*</span></label>
-                                            <input type="datetime-local" name="until_submission_2" id="until_submission_2" class="form-control form-control-sm" value="{{ old('until_submission_2') }}">
-                                        </div>
-                                        <div class="col-md-6 mb-2">
-                                            <label for="finalist_payment_start" class="form-label small fw-semibold mb-1">Mulai Registrasi Finalis</label>
-                                            <input type="datetime-local" name="finalist_payment_start" id="finalist_payment_start" class="form-control form-control-sm" value="{{ old('finalist_payment_start') }}">
-                                        </div>
-                                        <div class="col-md-6 mb-2">
-                                            <label for="finalist_payment_end" class="form-label small fw-semibold mb-1">Batas Registrasi Finalis</label>
-                                            <input type="datetime-local" name="finalist_payment_end" id="finalist_payment_end" class="form-control form-control-sm" value="{{ old('finalist_payment_end') }}">
+                                        <div id="stage2FieldsContainer" class="row g-2 w-100 {{ $defaultStageCount === 2 ? '' : 'd-none' }}">
+                                            <div class="col-md-6 mb-2">
+                                                <label for="until_submission_2" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Kedua/Lanjutan <span class="text-danger">*</span></label>
+                                                <input type="datetime-local" name="until_submission_2" id="until_submission_2" class="form-control form-control-sm" value="{{ old('until_submission_2') }}">
+                                            </div>
+                                            <div class="col-md-6 mb-2">
+                                                <label for="finalist_payment_start" class="form-label small fw-semibold mb-1">Mulai Registrasi Finalis</label>
+                                                <input type="datetime-local" name="finalist_payment_start" id="finalist_payment_start" class="form-control form-control-sm" value="{{ old('finalist_payment_start') }}">
+                                            </div>
+                                            <div class="col-md-6 mb-2">
+                                                <label for="finalist_payment_end" class="form-label small fw-semibold mb-1">Batas Registrasi Finalis</label>
+                                                <input type="datetime-local" name="finalist_payment_end" id="finalist_payment_end" class="form-control form-control-sm" value="{{ old('finalist_payment_end') }}">
+                                            </div>
+                                            <div class="col-12 mb-2">
+                                                <hr class="my-1">
+                                                <label for="price_stage2_display" class="form-label small fw-semibold mb-1">
+                                                    💰 Biaya Pembayaran Tahap 2 (Rp)
+                                                    <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;">Opsional</span>
+                                                </label>
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">Rp</span>
+                                                    <input type="text" id="price_stage2_display" class="form-control" placeholder="0"
+                                                        value="{{ number_format((int)old('price_stage2', 0), 0, ',', '.') }}">
+                                                    <input type="hidden" name="price_stage2" id="price_stage2" value="{{ (int)old('price_stage2', 0) }}">
+                                                </div>
+                                                <div class="form-text text-muted">Isi 0 atau kosongkan jika gratis. Peserta yang lolos Tahap 1 wajib membayar ini sebelum bisa upload Submission Tahap 2.</div>
+                                            </div>
                                         </div>
                                          <div class="col-md-6 mb-2">
                                              <label for="lomba_kategori" class="form-label small fw-semibold mb-1">Kategori Lomba <span class="text-danger">*</span></label>
@@ -959,20 +988,6 @@
                                              <label for="max_team_members" class="form-label small fw-semibold mb-1">Maksimal Anggota Tim <span class="text-danger">*</span></label>
                                              <input type="text" name="max_team_members" id="max_team_members" class="form-control form-control-sm" placeholder="Contoh: 2-5, 2-3 atau 5" value="{{ old('max_team_members', 5) }}">
                                          </div>
-                                        <div class="col-12 mb-2">
-                                            <hr class="my-1">
-                                            <label for="price_stage2_display" class="form-label small fw-semibold mb-1">
-                                                💰 Biaya Pembayaran Tahap 2 (Rp)
-                                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;">Opsional</span>
-                                            </label>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">Rp</span>
-                                                <input type="text" id="price_stage2_display" class="form-control" placeholder="0"
-                                                    value="{{ number_format((int)old('price_stage2', 0), 0, ',', '.') }}">
-                                                <input type="hidden" name="price_stage2" id="price_stage2" value="{{ (int)old('price_stage2', 0) }}">
-                                            </div>
-                                            <div class="form-text text-muted">Isi 0 atau kosongkan jika gratis. Peserta yang lolos Tahap 1 wajib membayar ini sebelum bisa upload Submission Tahap 2.</div>
-                                        </div>
                                     </div>
                                     <div class="form-text text-muted mt-1 small">Wajib diatur jika jenis event adalah Lomba. Peserta yang lolos pengumuman awal dapat mengunggah submission kedua.</div>
                                 </div>
@@ -1318,6 +1333,29 @@
             const untilSubmissionInput = document.getElementById('until_submission');
             const announcementDateInput = document.getElementById('announcement_date');
             const untilSubmission2Input = document.getElementById('until_submission_2');
+            const lombaStageCountInput = document.getElementById('lomba_stage_count');
+            const stage2FieldsContainer = document.getElementById('stage2FieldsContainer');
+
+            const updateStage2Visibility = () => {
+                const stageCount = lombaStageCountInput ? parseInt(lombaStageCountInput.value, 10) : 2;
+                const isTwoStage = stageCount === 2;
+                if (stage2FieldsContainer) {
+                    stage2FieldsContainer.classList.toggle('d-none', !isTwoStage);
+                }
+                if (untilSubmission2Input) {
+                    untilSubmission2Input.required = isTwoStage;
+                    untilSubmission2Input.disabled = !isTwoStage;
+                }
+                const stage2RelatedInputs = [
+                    document.getElementById('finalist_payment_start'),
+                    document.getElementById('finalist_payment_end'),
+                    document.getElementById('price_stage2'),
+                    document.getElementById('price_stage2_display'),
+                ].filter(Boolean);
+                stage2RelatedInputs.forEach((input) => {
+                    input.disabled = !isTwoStage;
+                });
+            };
 
             if (jenisSelect) {
                 const toggleLombaFields = () => {
@@ -1352,10 +1390,17 @@
                     if (startSubmissionInput) startSubmissionInput.required = isLomba;
                     if (untilSubmissionInput) untilSubmissionInput.required = isLomba;
                     if (announcementDateInput) announcementDateInput.required = isLomba;
-                    if (untilSubmission2Input) untilSubmission2Input.required = isLomba;
+                    if (lombaStageCountInput) lombaStageCountInput.required = isLomba;
+                    updateStage2Visibility();
+                    if (untilSubmission2Input && !isLomba) {
+                        untilSubmission2Input.required = false;
+                    }
                 };
 
                 jenisSelect.addEventListener('change', toggleLombaFields);
+                if (lombaStageCountInput) {
+                    lombaStageCountInput.addEventListener('change', updateStage2Visibility);
+                }
                 toggleLombaFields(); // run initially
             }
 

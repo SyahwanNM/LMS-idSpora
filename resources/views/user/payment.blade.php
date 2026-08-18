@@ -217,7 +217,7 @@
                                 $presetInstitutionLower = strtolower($presetInstitution);
 
                                 $presetTelkomValue = null;
-                                if (str_contains($presetInstitutionLower, 'telkom university bandung') || str_contains($presetInstitutionLower, 'universitas telkom bandung')) {
+                                if (str_contains($presetInstitutionLower, 'telkom university bandung') || str_contains($presetInstitutionLower, 'universitas telkom bandung') || str_contains($presetInstitutionLower, 'universitas telkom') || str_contains($presetInstitutionLower, 'telkom university')) {
                                     $presetTelkomValue = 'Telkom University Bandung';
                                 } elseif (str_contains($presetInstitutionLower, 'telkom university jakarta') || str_contains($presetInstitutionLower, 'universitas telkom jakarta')) {
                                     $presetTelkomValue = 'Telkom University Jakarta';

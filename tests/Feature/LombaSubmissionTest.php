@@ -85,6 +85,75 @@ class LombaSubmissionTest extends TestCase
         $response->assertSessionHasErrors(['until_submission']);
     }
 
+    public function test_lomba_defaults_to_two_stages_and_allows_single_stage_override(): void
+    {
+        $defaultEvent = Event::create([
+            'title' => 'Lomba Default 2 Stage',
+            'jenis' => 'Lomba',
+            'description' => 'Desc',
+            'speaker' => '',
+            'price' => 0,
+            'location' => 'Online',
+            'event_date' => now()->addDays(5)->toDateString(),
+            'event_time' => '10:00:00',
+            'start_submission' => now()->addDay(),
+            'until_submission' => now()->addDays(2),
+            'announcement_date' => now()->addDays(4),
+            'until_submission_2' => now()->addDays(6),
+            'is_published' => true,
+        ]);
+
+        $this->assertSame(2, (int) $defaultEvent->lomba_stage_count);
+
+        $singleStageEvent = Event::create([
+            'title' => 'Lomba Single Stage',
+            'jenis' => 'Lomba',
+            'description' => 'Desc',
+            'speaker' => '',
+            'price' => 0,
+            'location' => 'Online',
+            'event_date' => now()->addDays(7)->toDateString(),
+            'event_time' => '10:00:00',
+            'start_submission' => now()->addDay(),
+            'until_submission' => now()->addDays(3),
+            'announcement_date' => now()->addDays(5),
+            'until_submission_2' => null,
+            'lomba_stage_count' => 1,
+            'is_published' => true,
+        ]);
+
+        $this->assertSame(1, (int) $singleStageEvent->lomba_stage_count);
+    }
+
+    public function test_single_stage_lomba_does_not_require_second_submission_deadline(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('admin.events.store'), [
+            'title' => 'Lomba 1 Stage',
+            'jenis' => 'Lomba',
+            'manage_action' => 'manage',
+            'short_description' => 'Short description',
+            'description' => 'Long description',
+            'location' => 'Online',
+            'location_mode' => 'online',
+            'price' => 0,
+            'event_date' => now()->addDays(10)->toDateString(),
+            'event_time' => '10:00',
+            'start_submission' => now()->addDay()->format('Y-m-d\TH:i'),
+            'until_submission' => now()->addDays(3)->format('Y-m-d\TH:i'),
+            'announcement_date' => now()->addDays(5)->format('Y-m-d\TH:i'),
+            'lomba_stage_count' => 1,
+            'image' => UploadedFile::fake()->image('event.jpg'),
+            'lomba_kategori' => 'individual',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $event = Event::where('title', 'Lomba 1 Stage')->first();
+        $this->assertNotNull($event);
+        $this->assertSame(1, (int) $event->lomba_stage_count);
+    }
+
     public function test_user_cannot_register_or_pay_for_lomba_after_until_submission_deadline(): void
     {
         // Create lomba where deadline has passed

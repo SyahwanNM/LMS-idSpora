@@ -3320,7 +3320,7 @@
 
                                     <div class="row">
                                         {{-- STAGE 1 CARD --}}
-                                        <div class="col-md-6 mb-4">
+                                        <div class="{{ ($event->lomba_stage_count ?? 2) === 2 ? 'col-md-6' : 'col-12' }} mb-4">
                                             <div class="card border-0 shadow-sm rounded-4 h-100">
                                                 <div class="card-header bg-light border-0 py-3 rounded-top-4">
                                                     <h5 class="fw-bold mb-0 text-dark">Stage 1: Initial Upload</h5>
@@ -3450,6 +3450,7 @@
                                             </div>
                                         </div>
 
+                                        @if(($event->lomba_stage_count ?? 2) === 2)
                                         {{-- STAGE 2 CARD --}}
                                         <div class="col-md-6 mb-4">
                                             <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -3607,6 +3608,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        @endif
                                     </div>
                                 @endif
                             </div>

@@ -314,7 +314,7 @@ class EventController extends Controller
             'start_submission' => 'required_if:jenis,Lomba|nullable|date',
             'until_submission' => 'required_if:jenis,Lomba|nullable|date|after:start_submission',
             'announcement_date' => 'required_if:jenis,Lomba|nullable|date|after:until_submission',
-            'until_submission_2' => 'required_if:jenis,Lomba|nullable|date|after:announcement_date',
+            'until_submission_2' => ['nullable', 'date', 'after:announcement_date', Rule::requiredIf(fn () => strtolower((string) ($request->input('jenis') ?? '')) === 'lomba' && (int) ($request->input('lomba_stage_count', 2) ?: 2) === 2)],
             'price_stage2' => 'nullable|numeric|min:0',
             'finalist_payment_start' => 'nullable|date',
             'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
@@ -475,6 +475,7 @@ class EventController extends Controller
             'finalist_payment_start' => $request->finalist_payment_start,
             'finalist_payment_end' => $request->finalist_payment_end,
             'lomba_kategori' => $request->lomba_kategori ?? 'individual',
+            'lomba_stage_count' => (int) ($request->input('lomba_stage_count', 2) ?: 2),
             'max_team_members' => $request->max_team_members ? trim($request->max_team_members) : '5',
         ]);
 
@@ -1166,7 +1167,7 @@ class EventController extends Controller
             'start_submission' => 'required_if:jenis,Lomba|nullable|date',
             'until_submission' => 'required_if:jenis,Lomba|nullable|date|after:start_submission',
             'announcement_date' => 'required_if:jenis,Lomba|nullable|date|after:until_submission',
-            'until_submission_2' => 'required_if:jenis,Lomba|nullable|date|after:announcement_date',
+            'until_submission_2' => ['nullable', 'date', 'after:announcement_date', Rule::requiredIf(fn () => strtolower((string) ($request->input('jenis') ?? '')) === 'lomba' && (int) ($request->input('lomba_stage_count', 2) ?: 2) === 2)],
             'price_stage2' => 'nullable|numeric|min:0',
             'finalist_payment_start' => 'nullable|date',
             'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
@@ -1243,10 +1244,12 @@ class EventController extends Controller
             'finalist_payment_start',
             'finalist_payment_end',
             'lomba_kategori',
+            'lomba_stage_count',
             'max_team_members',
         ]);
 
         $data['lomba_kategori'] = $data['lomba_kategori'] ?? 'individual';
+        $data['lomba_stage_count'] = (int) ($data['lomba_stage_count'] ?? 2);
         $data['max_team_members'] = !empty($data['max_team_members']) ? trim($data['max_team_members']) : '5';
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.
