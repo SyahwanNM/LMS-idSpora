@@ -139,24 +139,45 @@
                     <tbody>
                         @forelse($events as $event)
                             @php
+                                $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
                                 $isConfigured = !empty($event->certificate_logo) || !empty($event->certificate_signature);
+                                if ($isLomba) {
+                                    $isConfiguredTL = !empty($event->certificate_logo_tidak_lolos) || !empty($event->certificate_signature_tidak_lolos);
+                                }
                                 $eventDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
                                 $isFinished = $eventDate ? ($eventDate->isPast() || $eventDate->isToday()) : false;
                                 $status = $isConfigured ? ($isFinished ? 'ready' : 'configured') : 'not-configured';
                             @endphp
                             <tr class="cert-row" data-title="{{ strtolower($event->title) }}" data-status="{{ $status }}">
                                 <td style="padding-left:1.5rem;">
-                                    <div style="font-weight:800;font-size:0.95rem;color:var(--crm-navy);">{{ $event->title }}</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="font-weight:800;font-size:0.95rem;color:var(--crm-navy);">{{ $event->title }}</div>
+                                        @if($isLomba)
+                                            <span class="badge" style="background:rgba(245,158,11,0.15);color:#d97706;font-size:0.68rem;font-weight:800;border-radius:6px;padding:3px 7px;">
+                                                <i class="bi bi-trophy-fill me-1"></i>LOMBA (2 SERTIFIKAT)
+                                            </span>
+                                        @endif
+                                    </div>
                                     <div style="font-size:0.75rem;color:var(--crm-text-subtle);">{{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}</div>
                                 </td>
                                 <td style="text-align:center;">
                                     <span class="badge-soft" style="font-weight:700;">{{ $event->registrations_count }}</span>
                                 </td>
                                 <td>
-                                    @if($isConfigured)
-                                        <span class="status-pill ready"><i class="bi bi-check-circle-fill"></i> ASET LENGKAP</span>
+                                    @if($isLomba)
+                                        @if($isConfigured && !empty($isConfiguredTL))
+                                            <span class="status-pill ready"><i class="bi bi-check-circle-fill"></i> 2 ASET LENGKAP</span>
+                                        @elseif($isConfigured || !empty($isConfiguredTL))
+                                            <span class="status-pill configured" style="background:rgba(245,158,11,0.1);color:#d97706;"><i class="bi bi-exclamation-circle-fill"></i> 1 ASET TERISI</span>
+                                        @else
+                                            <span class="status-pill missing"><i class="bi bi-dash-circle"></i> ASET KOSONG</span>
+                                        @endif
                                     @else
-                                        <span class="status-pill missing"><i class="bi bi-dash-circle"></i> ASET KOSONG</span>
+                                        @if($isConfigured)
+                                            <span class="status-pill ready"><i class="bi bi-check-circle-fill"></i> ASET LENGKAP</span>
+                                        @else
+                                            <span class="status-pill missing"><i class="bi bi-dash-circle"></i> ASET KOSONG</span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td style="padding-right:1.5rem;text-align:right;">

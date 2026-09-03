@@ -1,9 +1,15 @@
 @php
-    if (!empty($event->certificate_custom_template)) {
-        echo view('events.certificate-custom', array_merge(get_defined_vars(), ['is_preview' => $is_preview ?? false]))->render();
+    $isLomba = $isLomba ?? (strtolower(trim($event->jenis ?? '')) === 'lomba');
+    $isLolos = $isLolos ?? (strtolower(trim($registration->submission_status ?? '')) === 'lolos');
+    $activeCustom = $customTemplate ?? (($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
+        ? $event->certificate_custom_template_tidak_lolos
+        : $event->certificate_custom_template);
+
+    if (!empty($activeCustom)) {
+        echo view('events.certificate-custom', array_merge(get_defined_vars(), ['is_preview' => $is_preview ?? false, 'customTemplate' => $activeCustom]))->render();
         return;
     }
-    $template = $event->certificate_template ?? 'template_1';
+    $template = $template ?? ($event->certificate_template ?? 'template_1');
 @endphp
 @if(!isset($is_preview) || !$is_preview)<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sertifikat</title>@endif<style>@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 @if(!isset($is_preview) || !$is_preview)@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;-webkit-print-color-adjust:exact;}html,body{margin:0;padding:0;width:297mm;@if($template != 'template_4')height:210mm;overflow:hidden;@endif background:white;font-family:'Helvetica','Arial',sans-serif;}@endif
@@ -439,7 +445,7 @@
     </style>
 @if(!isset($is_preview) || !$is_preview)</head><body>@endif
 
-    @php $template = $event->certificate_template ?? 'template_1'; @endphp
+    @php $template = $template ?? ($event->certificate_template ?? 'template_1'); @endphp
     
     @if($template == 'template_4')
         {{-- Template 4: Blue Shield - 2-page layout --}}
@@ -472,8 +478,12 @@
                 <div class="recipient-underline"></div>
 
                 <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Atas Partisipasinya Sebagai</p>
-                <p style="font-size: 13pt; font-weight: bold; margin: 1mm 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">PESERTA</p>
-                <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Dalam Kegiatan Workshop</p>
+                <p style="font-size: 13pt; font-weight: bold; margin: 1mm 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">
+                    {{ $isLomba ? ($isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA' }}
+                </p>
+                <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
+                    {{ $isLomba ? 'Dalam Kegiatan Kompetisi' : 'Dalam Kegiatan Workshop' }}
+                </p>
                 
                 <h2 style="font-size: 14pt; font-weight: bold; margin: 1mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
                     "{{ $event->title }}"
@@ -684,7 +694,9 @@
                 
                 <p style="font-size: 14pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This certificate is proudly presented to</p>
                 <div class="recipient-name">{{ strtoupper($user->name) }}</div>
-                <p style="font-size: 12pt; color: #1e293b; margin-top: 10px;">for exceptional completion of the professional program</p>
+                <p style="font-size: 12pt; color: #1e293b; margin-top: 10px;">
+                    {{ $isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'for exceptional completion of the professional program' }}
+                </p>
                 <h2 style="font-size: 24pt; color: #1e1b4b; margin: 10px 0; font-family: 'Georgia', serif;">"{{ $event->title }}"</h2>
                 <p style="font-size: 11pt; color: #64748b;">Issued by IdSPora Authority on {{ $event->event_date?->format('d F Y') }}</p>
             </div>
@@ -745,7 +757,9 @@
                 @else
                     <div class="recipient-name">{{ strtoupper($user->name) }}</div>
                 @endif
-                <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;">has successfully completed the program</p>
+                <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;">
+                    {{ $isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program' }}
+                </p>
                 <h2 style="font-size: 26pt; color: #1e1b4b; margin: 15px 0; font-family: 'Georgia', serif;">"{{ $event->title }}"</h2>
                 <p style="font-size: 12pt; color: #64748b;">Issued on {{ $issuedAt->format('d F Y') }} by idSpora Team</p>
             </div>

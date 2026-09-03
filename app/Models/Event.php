@@ -102,6 +102,11 @@ class Event extends Model
         'is_free_telkom',
         'show_feedback',
         'file_tambahan',
+        'certificate_template_tidak_lolos',
+        'certificate_logo_tidak_lolos',
+        'certificate_signature_tidak_lolos',
+        'file_tambahan_tidak_lolos',
+        'certificate_custom_template_tidak_lolos',
     ];
 
     protected $attributes = [
@@ -130,6 +135,9 @@ class Event extends Model
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
         'certificate_custom_template' => 'array',
+        'certificate_logo_tidak_lolos' => 'array',
+        'certificate_signature_tidak_lolos' => 'array',
+        'certificate_custom_template_tidak_lolos' => 'array',
         'start_submission' => 'datetime',
         'until_submission' => 'datetime',
         'announcement_date' => 'datetime',

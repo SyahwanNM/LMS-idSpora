@@ -18,32 +18,31 @@
         
         .paper-container {
             width: 100%;
-            aspect-ratio: 1.414 / 1;
-            background: white;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
-            margin: 0 auto;
-            border-radius: 12px;
-            overflow: hidden;
+            max-width: 1020px;
+            margin: 0 auto 3rem;
             position: relative;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            background: white;
+            overflow: hidden;
             border: 1px solid #e2e8f0;
         }
 
+        .cert-aspect {
+            width: 100%;
+            padding-top: 62.96%; /* 642 / 1020 * 100 */
+            position: relative;
+            overflow: hidden;
+        }
+
         .cert-scaler {
-            transform-origin: top left;
-            width: 29.7cm;
-            height: 21cm;
             position: absolute;
             top: 0;
             left: 0;
+            width: 1020px;
+            height: 642px;
+            transform-origin: top left;
         }
-
-        /* Responsive scaling for the 29.7cm x 21cm virtual paper */
-        @media (min-width: 1100px) { .cert-scaler { transform: scale(0.96); } }
-        @media (max-width: 1099px) { .cert-scaler { transform: scale(0.85); } }
-        @media (max-width: 991px) { .cert-scaler { transform: scale(0.72); } }
-        @media (max-width: 767px) { .cert-scaler { transform: scale(0.5); } }
-        @media (max-width: 576px) { .cert-scaler { transform: scale(0.35); } }
-        @media (max-width: 400px) { .cert-scaler { transform: scale(0.28); } }
         
         .text-navy { color: #1e1b4b; }
         .breadcrumb-item a { color: #64748b; font-weight: 500; }
@@ -112,16 +111,40 @@
 
         <!-- The actual certificate render -->
         <div class="paper-container mb-5">
-            <div class="cert-scaler">
-                @if(!empty($event->certificate_custom_template))
-                    @include('events.certificate-custom', ['is_preview' => true])
-                @else
-                    @include('events.certificate-pdf', ['is_preview' => true])
-                @endif
+            <div class="cert-aspect">
+                <div class="cert-scaler" id="certScaler">
+                    @php
+                        $isLomba = $isLomba ?? (strtolower(trim($event->jenis ?? '')) === 'lomba');
+                        $isLolos = $isLolos ?? (strtolower(trim($registration->submission_status ?? '')) === 'lolos');
+                        $activeCustomTpl = $customTemplate ?? (($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
+                            ? $event->certificate_custom_template_tidak_lolos
+                            : $event->certificate_custom_template);
+                    @endphp
+                    @if(!empty($activeCustomTpl))
+                        @include('events.certificate-custom', ['is_preview' => true, 'customTemplate' => $activeCustomTpl])
+                    @else
+                        @include('events.certificate-pdf', ['is_preview' => true, 'template' => $template, 'isLomba' => $isLomba, 'isLolos' => $isLolos])
+                    @endif
+                </div>
             </div>
         </div>
     </div>
 
     @include('partials.footer-before-login')
+    <script>
+        function scaleCert() {
+            const scaler = document.getElementById('certScaler');
+            const container = scaler ? scaler.closest('.paper-container') : null;
+            if (!scaler || !container) return;
+            const containerW = container.offsetWidth;
+            const certNaturalW = scaler.offsetWidth;
+            if (certNaturalW > 0) {
+                const scale = containerW / certNaturalW;
+                scaler.style.transform = 'scale(' + scale + ')';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', scaleCert);
+        window.addEventListener('resize', scaleCert);
+    </script>
 </body>
 </html>

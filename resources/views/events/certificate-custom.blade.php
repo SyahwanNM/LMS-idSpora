@@ -1,6 +1,6 @@
 @php
     $itemTitle = $event->title ?? $course->name ?? 'Program';
-    $customTemplate = $event->certificate_custom_template ?? $course->certificate_custom_template ?? [];
+    $customTemplate = $customTemplate ?? ($event->certificate_custom_template ?? $course->certificate_custom_template ?? []);
     
     // Default background and elements if template is empty
     $bgColor = $customTemplate['background']['color'] ?? '#ffffff';

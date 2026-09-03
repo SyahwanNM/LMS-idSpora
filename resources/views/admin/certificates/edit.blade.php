@@ -12,6 +12,67 @@
     }
     .page-eyebrow::before { content: ''; display: inline-block; width: 16px; height: 2px; background: var(--crm-primary); border-radius: 2px; }
 
+    /* Section Tabs for Lomba */
+    .cert-section-nav {
+        display: flex;
+        gap: 10px;
+        background: #f1f5f9;
+        padding: 6px;
+        border-radius: 14px;
+        border: 1px solid var(--crm-border-soft);
+        margin-bottom: 1.5rem;
+    }
+    .cert-section-nav-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 16px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        background: transparent;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--crm-text-subtle);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .cert-section-nav-btn:hover {
+        color: var(--crm-navy);
+        background: rgba(255,255,255,0.6);
+    }
+    .cert-section-nav-btn.active {
+        background: #fff;
+        color: var(--crm-navy);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    }
+    .cert-section-nav-btn.active.is-lolos {
+        border-color: rgba(16,185,129,0.3);
+        color: #065f46;
+    }
+    .cert-section-nav-btn.active.is-tidak-lolos {
+        border-color: rgba(100,116,139,0.3);
+        color: #334155;
+    }
+
+    .preview-switcher-btn {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--crm-border);
+        background: var(--crm-border-soft);
+        color: var(--crm-text-subtle);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .preview-switcher-btn.active {
+        background: var(--crm-navy);
+        color: #fff;
+        border-color: var(--crm-navy);
+    }
+
     .template-card {
         cursor: pointer; transition: all 0.25s ease;
         border: 2.5px solid var(--crm-border-soft); border-radius: 16px;
@@ -108,44 +169,94 @@
     }
     #cert-preview-scaler .template_1 .recipient-name { 
         font-size: 38pt !important; 
+        font-family: 'Great Vibes', 'Georgia', serif !important; 
         font-weight: normal !important; 
-        color: #7f1d1d !important;
-        border-bottom: none !important; 
-        display: inline-block !important; 
-        padding: 4px 50px !important; 
-        margin: 10px 0 !important;
-        font-family: 'Great Vibes', cursive !important;
-        letter-spacing: 1px;
+        font-style: italic !important;
+        color: #0f172a !important; 
+        margin: 5px 0 10px !important;
+        border: none !important;
+        display: block !important;
+    }
+    #cert-preview-scaler .template_1 .logo-row {
+        height: 48px;
+        margin-bottom: 5px;
         position: relative;
         z-index: 2;
     }
-    #cert-preview-scaler .template_1 .content { text-align: center; position: relative; z-index: 2; }
-    #cert-preview-scaler .template_1 .sig-box {
-        display: inline-block !important;
-        float: none !important;
-        text-align: center !important;
-        width: 230px !important;
-        margin: 0 30px !important;
+    #cert-preview-scaler .template_1 .preview-logo-container-t12 {
+        display: inline-flex;
+        align-items: center;
+        gap: 15px;
     }
-    #cert-preview-scaler .template_1 .sig-line {
-        width: 170px !important;
-        border-bottom: 1.5px dashed #7f1d1d !important;
-        margin: 8px auto !important;
+    #cert-preview-scaler .template_1 .preview-logo-container-t12 .logo-item {
+        height: 38px;
+        max-width: 140px;
+        object-fit: contain;
+    }
+    #cert-preview-scaler .template_1 .cert-footer {
+        position: absolute;
+        bottom: 50px;
+        left: 60px;
+        right: 60px;
+        z-index: 2;
+    }
+    #cert-preview-scaler .template_1 .sig-box {
+        display: inline-block;
+        text-align: center;
+        width: 180px;
+        margin: 0 15px;
+    }
+    #cert-preview-scaler .template_1 .sig-box .sig-line {
+        border-bottom: 1.5px solid #1e293b;
+        margin: 5px 0 8px;
+    }
+    #cert-preview-scaler .template_1 .verification-tag {
+        position: absolute;
+        bottom: 15px;
+        left: 50px;
+        font-size: 8pt;
+        color: #94a3b8;
+        letter-spacing: 2px;
+        font-family: 'Helvetica', sans-serif;
+    }
+    #cert-preview-scaler .template_1 .cert-id {
+        position: absolute;
+        bottom: 15px;
+        right: 50px;
+        font-size: 8pt;
+        color: #94a3b8;
+        font-family: 'Helvetica', sans-serif;
     }
 
-    /* Template 2: Modern Corporate */
+    /* Template 2: Modern Minimal */
     #cert-preview-scaler .template_2 { 
-        padding: 0; 
+        padding: 50px; 
         height: 642px; 
         width: 1020px;
-        box-sizing: border-box; 
-        overflow: hidden; 
-        background: #f8fafc;
+        box-sizing: border-box;
+        background: #faf8f5;
         position: relative;
+        overflow: hidden;
     }
-    #cert-preview-scaler .template_2 .content-wrap {
-        padding: 50px 20px 20px 20px;
-        text-align: center;
+    #cert-preview-scaler .template_2 .logo-row {
+        position: absolute;
+        top: 30px;
+        right: 40px;
+        z-index: 10;
+        margin: 0;
+        height: auto;
+    }
+    #cert-preview-scaler .template_2 .preview-logo-container-t12 {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    #cert-preview-scaler .template_2 .preview-logo-container-t12 .logo-item {
+        height: 40px;
+        max-width: 120px;
+        object-fit: contain;
+    }
+    #cert-preview-scaler .template_2 .header {
         position: relative;
         z-index: 2;
     }
@@ -213,7 +324,7 @@
         margin: 0 30px !important;
     }
 
-    /* Template 3: Creative Professional */
+    /* Template 3: Creative Dynamic */
     #cert-preview-scaler .template_3 { 
         padding: 0; 
         height: 642px; 
@@ -239,70 +350,47 @@
         z-index: 2;
         text-align: center;
     }
-    #cert-preview-scaler .template_3 .header-bg::after {
-        display: none;
-    }
     #cert-preview-scaler .template_3 h1 { 
         font-size: 30pt; 
         font-weight: 900; 
         margin: 0; 
-        text-transform: uppercase;
+        text-transform: uppercase; 
         letter-spacing: 3px;
-        font-family: 'Georgia', serif;
-        color: #1e1b4b;
-        text-shadow: none;
-    }
-    #cert-preview-scaler .template_3 .main-content {
-        padding: 10px 70px;
-        position: relative;
-        z-index: 2;
-        text-align: center;
+        font-family: Arial, sans-serif;
     }
     #cert-preview-scaler .template_3 .recipient-name { 
-        font-family: 'Great Vibes', 'Georgia', serif;
-        font-size: 38pt; 
-        font-weight: normal; 
-        color: #4c1d95; 
-        margin: 10px auto;
-        display: inline-block;
-        border-bottom: 2px solid #d97706;
-        padding-bottom: 5px;
-        -webkit-background-clip: initial;
-        -webkit-text-fill-color: initial;
+        font-size: 36pt; 
+        font-weight: 900; 
+        color: #1e1b4b; 
+        margin: 15px 0; 
+        text-transform: uppercase;
+        font-family: Arial, sans-serif;
     }
-    #cert-preview-scaler .template_3 .award-line {
-        display: none;
+    #cert-preview-scaler .template_3 .cert-footer {
+        position: absolute;
+        bottom: 40px;
+        left: 70px;
+        right: 70px;
+        z-index: 2;
     }
-
-    /* Shared / Layout Components */
-    #cert-preview-scaler .logo-row { text-align: center; margin-bottom: 15px; width: 100%; }
-    #cert-preview-scaler .logo-container { display: inline-block; vertical-align: middle; }
-    #cert-preview-scaler .logo-item { height: 48px; width: auto; margin: 0 10px; vertical-align: middle; }
-    
-    #cert-preview-scaler .cert-footer { position: absolute; bottom: 70px; width: 100%; left: 0; padding: 0 70px; box-sizing: border-box; z-index: 3; }
-    
-    #cert-preview-scaler .sig-box { float: right; text-align: center; margin-left: 35px; }
     #cert-preview-scaler .template_3 .sig-box {
-        display: inline-block !important;
-        float: none !important;
-        background: rgba(255, 255, 255, 0.85);
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        padding: 10px 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
-        backdrop-filter: blur(6px);
-        margin: 0 20px !important;
+        display: inline-block;
+        text-align: center;
+        width: 200px;
+        margin: 0 15px;
     }
-    #cert-preview-scaler .sig-line { width: 170px; border-bottom: 1.5px solid #0f172a; margin: 8px auto; }
-    #cert-preview-scaler .template_3 .sig-line { border-bottom-color: #4f46e5; }
-    
-    #cert-preview-scaler .cert-id { position: absolute; bottom: 25px; right: 40px; font-size: 8.5pt; color: #94a3b8; font-weight: 600; z-index: 3; }
-    #cert-preview-scaler .verification-tag { position: absolute; bottom: 25px; left: 40px; font-size: 7.5pt; color: #94a3b8; font-family: monospace; letter-spacing: 1.5px; font-weight: 600; z-index: 3; }
-    #cert-preview-scaler .template_3 .verification-tag { left: 70px; bottom: 25px; }
-    #cert-preview-scaler .template_3 .cert-id { right: 70px; bottom: 25px; }
+    #cert-preview-scaler .template_3 .sig-box .sig-line {
+        border-bottom: 2px solid #1e1b4b;
+        margin: 5px 0 8px;
+    }
+    #cert-preview-scaler .template_3 .preview-logo-container-t3 {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
 
     /* Template 4: Blue Shield */
-    #cert-preview-scaler .template_4 { 
+    #cert-preview-scaler .template_4 {
         padding: 0;
         height: 642px;
         width: 1020px;
@@ -313,142 +401,89 @@
     }
     #cert-preview-scaler .template_4 .bg-image {
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 1020px;
-        height: 642px;
-        z-index: 1;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 1; pointer-events: none;
     }
     #cert-preview-scaler .template_4 .logo-banner-container {
         position: absolute;
-        top: 0;
-        left: 28%;
-        width: 44%;
-        background-color: #ffffff;
-        border-radius: 0 0 15px 15px;
-        padding: 8px 20px;
-        text-align: center;
+        top: 24px; left: 55px;
         z-index: 10;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
+        display: flex; align-items: center; gap: 15px;
     }
     #cert-preview-scaler .template_4 .logo-poster-img {
-        height: 45px;
-        width: auto;
-        vertical-align: middle;
-        display: inline-block;
+        height: 52px; width: auto; object-fit: contain;
     }
     #cert-preview-scaler .template_4 .logo-item-top {
-        height: 38px;
-        width: auto;
-        vertical-align: middle;
-        display: inline-block;
-        margin: 0 5px;
+        height: 42px; width: auto; object-fit: contain;
     }
     #cert-preview-scaler .template_4 .content-blue {
         position: absolute;
-        top: 136px;
-        left: 0;
-        width: 1020px;
-        text-align: center;
-        z-index: 5;
-        padding: 0;
-        box-sizing: border-box;
-        color: #ffffff;
-        font-family: Arial, Helvetica, sans-serif;
+        top: 130px; left: 60px; right: 60px;
+        z-index: 10; text-align: center;
     }
     #cert-preview-scaler .template_4 .recipient-underline {
-        width: 604px;
-        height: 1.5px;
-        background-color: #ffffff;
-        margin: 8px auto 15px auto;
+        width: 480px; height: 1.5px; background-color: #1a1a1a;
+        margin: 2px auto 0 auto;
     }
     #cert-preview-scaler .template_4 .cert-footer {
-        position: absolute !important;
-        bottom: 45px !important;
-        left: 75px !important;
-        right: 75px !important;
-        text-align: center !important;
-        width: auto !important;
-        z-index: 6 !important;
-        padding: 0 !important;
+        position: absolute;
+        bottom: 25px; left: 60px; right: 60px;
+        z-index: 10;
+        display: flex; justify-content: center; gap: 20px;
     }
     #cert-preview-scaler .template_4 .sig-box {
-        display: inline-block !important;
-        vertical-align: bottom !important;
-        float: none !important;
-        text-align: center !important;
-        width: 264px !important;
-        margin: 0 30px !important;
+        display: inline-block; text-align: center; width: 220px;
     }
     #cert-preview-scaler .template_4 .sig-position {
-        font-weight: bold;
-        margin: 0 0 4px 0;
-        font-size: 8pt;
-        color: #1a1a1a;
+        font-size: 8pt; color: #1a1a1a; margin: 0 0 2px 0;
         font-family: Arial, Helvetica, sans-serif;
     }
     #cert-preview-scaler .template_4 .sig-image-wrap {
-        height: 48px;
-        margin: 4px auto;
-        text-align: center;
+        height: 48px; display: flex; align-items: center; justify-content: center;
     }
     #cert-preview-scaler .template_4 .sig-img {
-        height: 48px;
-        width: auto;
-        display: block;
-        margin: 0 auto;
-        object-fit: contain;
+        max-height: 44px; max-width: 140px; width: auto;
+        display: block; margin: 0 auto; object-fit: contain;
     }
     #cert-preview-scaler .template_4 .sig-line {
-        width: 208px;
-        border-bottom: 1.5px solid #1a1a1a;
-        margin: 2px auto;
+        width: 180px; border-bottom: 1.5px solid #1a1a1a; margin: 2px auto;
     }
     #cert-preview-scaler .template_4 .sig-name {
-        font-weight: bold;
-        margin: 6px 0 0 0;
-        font-size: 8.5pt;
-        color: #1a1a1a;
+        font-weight: bold; margin: 5px 0 0 0; font-size: 8.5pt; color: #1a1a1a;
         font-family: Arial, Helvetica, sans-serif;
-    }
-    #cert-preview-scaler .template_4 .curriculum-table {
-        width: 85%;
-        margin: 5px auto;
-        border-collapse: collapse;
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 9.5pt;
-        z-index: 10;
-        position: relative;
-    }
-    #cert-preview-scaler .template_4 .curriculum-table th {
-        background-color: #7cc2f7;
-        color: #000000;
-        border: 1.5px solid #000000;
-        padding: 6px 4px;
-        font-weight: bold;
-        text-align: center;
-    }
-    #cert-preview-scaler .template_4 .curriculum-table td {
-        background-color: #faf9f6;
-        color: #000000;
-        border: 1.5px solid #000000;
-        padding: 5px 10px;
-        font-weight: bold;
-    }
-    #cert-preview-scaler .template_4 .curriculum-table td.center {
-        text-align: center;
     }
 </style>
 @endsection
 
 @section('content')
+@php
+    $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+
+    $tpls = [
+        ['id'=>'template_1','name'=>'Classic Royal','desc'=>'Elegan dengan aksen emas dan navy.','bg'=>'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)','icon'=>'bi-award'],
+        ['id'=>'template_2','name'=>'Modern Minimal','desc'=>'Bersih, fokus pada tipografi modern.','bg'=>'#f1f5f9','icon'=>'bi-file-earmark-text','color'=>'#1e293b'],
+        ['id'=>'template_3','name'=>'Creative Dynamic','desc'=>'Enerjik dengan gradien dan pola.','bg'=>'linear-gradient(135deg, #6d28d9 0%, #db2777 100%)','icon'=>'bi-palette'],
+        ['id'=>'template_4','name'=>'Blue Shield','desc'=>'Biru navy elegan dengan aksen emas.','bg'=>'linear-gradient(155deg, #001060 0%, #0033cc 60%, #0050ff 100%)','icon'=>'bi-shield-fill-check']
+    ];
+
+    $logosLolos = is_array($event->certificate_logo) ? $event->certificate_logo : ($event->certificate_logo ? [$event->certificate_logo] : []);
+    $sigsLolos = is_array($event->certificate_signature) ? $event->certificate_signature : ($event->certificate_signature ? [$event->certificate_signature] : []);
+
+    $logosTidakLolos = is_array($event->certificate_logo_tidak_lolos) ? $event->certificate_logo_tidak_lolos : ($event->certificate_logo_tidak_lolos ? [$event->certificate_logo_tidak_lolos] : []);
+    $sigsTidakLolos = is_array($event->certificate_signature_tidak_lolos) ? $event->certificate_signature_tidak_lolos : ($event->certificate_signature_tidak_lolos ? [$event->certificate_signature_tidak_lolos] : []);
+@endphp
+
 <div class="crm-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
     <div>
         <div class="page-eyebrow">Template Settings</div>
-        <h1 style="font-size:1.5rem;font-weight:800;color:var(--crm-navy);letter-spacing:-0.8px;margin:0;">Konfigurasi Sertifikat Event</h1>
+        <div class="d-flex align-items-center gap-2">
+            <h1 style="font-size:1.5rem;font-weight:800;color:var(--crm-navy);letter-spacing:-0.8px;margin:0;">Konfigurasi Sertifikat Event</h1>
+            @if($isLomba)
+                <span class="badge" style="background:rgba(234,179,8,0.15);color:#b45309;font-weight:800;font-size:0.75rem;padding:6px 12px;border-radius:8px;">
+                    🏆 Tipe Event: Lomba (2 Sertifikat)
+                </span>
+            @endif
+        </div>
         <p style="font-size:0.8rem;color:var(--crm-text-subtle);margin:5px 0 0;">Event: <span class="fw-700 text-primary">{{ $event->title }}</span></p>
     </div>
     <a href="{{ route('admin.crm.certificates.index') }}" class="btn btn-sm px-3 fw-600 mt-3 mt-md-0"
@@ -474,183 +509,369 @@
 </div>
 @endif
 
-<form action="{{ route('admin.crm.certificates.update', $event) }}" method="POST" enctype="multipart/form-data">
+<form action="{{ route('admin.crm.certificates.update', $event) }}" method="POST" enctype="multipart/form-data" id="mainCertificateForm">
     @csrf @method('PUT')
 
     <div class="row g-4">
         <!-- Left Column: Form Configuration -->
         <div class="col-lg-6">
-            {{-- Step 1 --}}
-            <div class="card-minimal p-4 mb-4">
-                <div class="d-flex align-items-center gap-2 mb-4">
-                    <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">1</div>
-                    <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Pilih Template Desain</h6>
-                </div>
-                
-                <div class="row g-3">
-                    @php $tpls = [
-                        ['id'=>'template_1','name'=>'Classic Royal','desc'=>'Elegan dengan aksen emas dan navy.','bg'=>'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)','icon'=>'bi-award'],
-                        ['id'=>'template_2','name'=>'Modern Minimal','desc'=>'Bersih, fokus pada tipografi modern.','bg'=>'#f1f5f9','icon'=>'bi-file-earmark-text','color'=>'#1e293b'],
-                        ['id'=>'template_3','name'=>'Creative Dynamic','desc'=>'Enerjik dengan gradien dan pola.','bg'=>'linear-gradient(135deg, #6d28d9 0%, #db2777 100%)','icon'=>'bi-palette'],
-                        ['id'=>'template_4','name'=>'Blue Shield','desc'=>'Biru navy elegan dengan aksen emas.','bg'=>'linear-gradient(155deg, #001060 0%, #0033cc 60%, #0050ff 100%)','icon'=>'bi-shield-fill-check']
-                    ]; @endphp
-                    @foreach($tpls as $t)
-                    <div class="col-md-4">
-                        <div class="template-card {{ ($event->certificate_template ?? 'template_1') == $t['id'] ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this)">
-                            <div class="check-icon"><i class="bi bi-check"></i></div>
-                            <div class="template-preview" style="background:{{ $t['bg'] }}; color:{{ $t['color'] ?? '#fff' }};">
-                                <i class="bi {{ $t['icon'] }}"></i>
-                            </div>
-                            <div class="p-3">
-                                <div style="font-weight:700;font-size:0.85rem;color:var(--crm-navy);">{{ $t['name'] }}</div>
-                                <div style="font-size:0.7rem;color:var(--crm-text-subtle);line-height:1.4;margin-top:2px;">{{ $t['desc'] }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                <input type="hidden" name="certificate_template" id="selected_template" value="{{ $event->certificate_template ?? 'template_1' }}">
-                
-                <div class="d-flex mt-3 justify-content-between align-items-center mb-3">
-                    <label class="form-field-label mb-0">File Tambahan</label>
-                </div>
-                <div id="fileTambahan" class="mb-3">
-                    @if(!empty($event->file_tambahan))
-                        <div class="mb-2 position-relative d-inline-block" style="width: 150px; height: 150px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);" id="existing-file-tambahan-container">
-                            <img src="{{ asset('uploads/' . str_replace('storage/', '', $event->file_tambahan)) }}" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="File Tambahan">
-                            <label class="position-absolute d-flex align-items-center justify-content-center" style="top:5px; right:5px; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:6px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Hapus File Tambahan">
-                                <input type="checkbox" name="delete_file_tambahan" value="1" class="d-none" onchange="document.getElementById('existing-file-tambahan-container').style.opacity = this.checked ? '0.3' : '1';">
-                                <i class="bi bi-trash text-danger" style="font-size:0.75rem;"></i>
-                            </label>
-                        </div>
-                    @endif
-                    <div class="mb-2 d-none position-relative" id="new-file-tambahan-preview" style="width: 150px; height: 150px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);">
-                        <img id="new-file-tambahan-img" src="" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="New File Tambahan">
-                        <span class="position-absolute badge bg-primary" style="bottom: 5px; right: 5px;">Baru</span>
-                    </div>
-                    <input type="file" accept="image/*" name="file_tambahan" class="form-field mb-2" onchange="if(this.files && this.files[0]) { let reader = new FileReader(); reader.onload = function(e) { document.getElementById('new-file-tambahan-img').src = e.target.result; document.getElementById('new-file-tambahan-preview').classList.remove('d-none'); document.getElementById('new-file-tambahan-preview').classList.add('d-inline-block'); }; reader.readAsDataURL(this.files[0]); } else { document.getElementById('new-file-tambahan-preview').classList.add('d-none'); document.getElementById('new-file-tambahan-preview').classList.remove('d-inline-block'); }">
-                    <small class="text-muted d-block mt-1">Opsional. File ini akan digabungkan di halaman kedua PDF sertifikat.</small>
-                </div>
 
-                <div class="mt-4 p-3 rounded-4 bg-light border d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="fw-bold text-dark small"><i class="bi bi-magic me-1 text-warning"></i> Custom Template Builder</div>
-                        <div class="text-muted" style="font-size:0.75rem;">Buat template sertifikat custom Anda sendiri secara visual dengan drag &amp; drop.</div>
-                    </div>
-                    <a href="{{ route('admin.crm.certificates.template-builder', $event) }}" class="btn btn-sm btn-primary fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
-                        Buka Builder
-                    </a>
-                </div>
-
-                @if(!empty($event->certificate_custom_template))
-                <div class="mt-3 p-3 rounded-4 border d-flex justify-content-between align-items-center" style="background:#ecfdf5; border-color:#a7f3d0;">
-                    <div>
-                        <div class="fw-bold text-success small"><i class="bi bi-patch-check-fill me-1"></i> Menggunakan Template Custom</div>
-                        <div class="text-muted" style="font-size:0.75rem;">Template custom sedang aktif untuk event ini.</div>
-                    </div>
-                    <button type="submit" form="reset-custom-form" class="btn btn-sm btn-outline-danger fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
-                        Hapus Custom
+            @if($isLomba)
+                <!-- Lomba Dual Section Switcher -->
+                <div class="cert-section-nav">
+                    <button type="button" class="cert-section-nav-btn is-lolos active" data-section="lolos" onclick="switchSection('lolos')">
+                        <i class="bi bi-trophy-fill text-success"></i>
+                        <span>Sertifikat Peserta Lolos</span>
+                    </button>
+                    <button type="button" class="cert-section-nav-btn is-tidak-lolos" data-section="tidak_lolos" onclick="switchSection('tidak_lolos')">
+                        <i class="bi bi-award text-secondary"></i>
+                        <span>Sertifikat Peserta Tidak Lolos</span>
                     </button>
                 </div>
+            @endif
+
+            {{-- SECTION 1: LOLOS / DEFAULT --}}
+            <div id="pane-lolos" class="cert-pane" style="display: block;">
+                @if($isLomba)
+                    <div class="p-3 mb-3 rounded-3" style="background:#ecfdf5; border: 1px solid #a7f3d0;">
+                        <div class="fw-800 text-success small"><i class="bi bi-check-circle-fill me-1"></i> Desain Sertifikat: Peserta Lolos / Finalis</div>
+                        <div class="text-muted" style="font-size:0.75rem;">Konfigurasi template, logo, dan tanda tangan khusus untuk peserta yang lolos seleksi / babak berikutnya.</div>
+                    </div>
                 @endif
-            </div>
 
-            {{-- Step 2 --}}
-            <div class="card-minimal p-4 mb-4">
-                <div class="d-flex align-items-center gap-2 mb-4">
-                    <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">2</div>
-                    <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Kelola Aset Visual</h6>
-                </div>
-
-                <div class="row g-4">
-                    {{-- Logos --}}
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <label class="form-field-label mb-0">Logo Partner Tambahan</label>
-                            <button type="button" id="addLogoBtn" onclick="addLogoField()" class="btn btn-sm fw-700" style="font-size:0.65rem;color:var(--crm-primary);background:rgba(124,58,237,0.08);border-radius:6px;padding:3px 10px;">
-                                <i class="bi bi-plus-lg me-1"></i>Tambah Baris
-                            </button>
-                        </div>
-                        <div id="logoUploadContainer" class="mb-3">
-                            <input type="file" name="certificate_logo[]" class="form-field mb-2 logo-file-input" accept="image/*" onchange="onLogoFileChange(this, 'init_0')">
-                        </div>
-                        
-                        <div id="existingLogos" class="d-flex flex-wrap gap-3">
-                            @php $logos = is_array($event->certificate_logo) ? $event->certificate_logo : ($event->certificate_logo ? [$event->certificate_logo] : []); @endphp
-                            @foreach($logos as $logo)
-                                <div class="asset-item">
-                                    <img src="{{ asset('uploads/' . $logo) }}" style="height:40px;object-fit:contain;">
-                                    <div class="asset-delete" onclick="markDelete('logo', '{{ $logo }}', this, event)"><i class="bi bi-x"></i></div>
-                                    <input type="hidden" name="delete_logos[]" value="" class="delete-logo-input">
+                {{-- Step 1 (Lolos) --}}
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">1</div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Pilih Template Desain {{ $isLomba ? '(Peserta Lolos)' : '' }}</h6>
+                    </div>
+                    
+                    <div class="row g-3 template-card-container">
+                        @foreach($tpls as $t)
+                        <div class="col-md-6">
+                            <div class="template-card template-card-lolos {{ ($event->certificate_template ?? 'template_1') == $t['id'] ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this, 'lolos')">
+                                <div class="check-icon"><i class="bi bi-check"></i></div>
+                                <div class="template-preview" style="background:{{ $t['bg'] }}; color:{{ $t['color'] ?? '#fff' }};">
+                                    <i class="bi {{ $t['icon'] }}"></i>
                                 </div>
-                            @endforeach
+                                <div class="p-3">
+                                    <div style="font-weight:700;font-size:0.85rem;color:var(--crm-navy);">{{ $t['name'] }}</div>
+                                    <div style="font-size:0.7rem;color:var(--crm-text-subtle);line-height:1.4;margin-top:2px;">{{ $t['desc'] }}</div>
+                                </div>
+                            </div>
                         </div>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="certificate_template" id="selected_template_lolos" value="{{ $event->certificate_template ?? 'template_1' }}">
+                    
+                    <div class="d-flex mt-4 justify-content-between align-items-center mb-2">
+                        <label class="form-field-label mb-0">File Tambahan (Halaman Kedua)</label>
+                    </div>
+                    <div class="mb-3">
+                        @if(!empty($event->file_tambahan))
+                            <div class="mb-2 position-relative d-inline-block" style="width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);" id="existing-file-tambahan-container">
+                                <img src="{{ asset('uploads/' . str_replace('storage/', '', $event->file_tambahan)) }}" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="File Tambahan">
+                                <label class="position-absolute d-flex align-items-center justify-content-center" style="top:5px; right:5px; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:6px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Hapus File Tambahan">
+                                    <input type="checkbox" name="delete_file_tambahan" value="1" class="d-none" onchange="document.getElementById('existing-file-tambahan-container').style.opacity = this.checked ? '0.3' : '1';">
+                                    <i class="bi bi-trash text-danger" style="font-size:0.75rem;"></i>
+                                </label>
+                            </div>
+                        @endif
+                        <div class="mb-2 d-none position-relative" id="new-file-tambahan-preview" style="width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);">
+                            <img id="new-file-tambahan-img" src="" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="New File Tambahan">
+                            <span class="position-absolute badge bg-primary" style="bottom: 5px; right: 5px;">Baru</span>
+                        </div>
+                        <input type="file" accept="image/*" name="file_tambahan" class="form-field mb-2" onchange="if(this.files && this.files[0]) { let reader = new FileReader(); reader.onload = function(e) { document.getElementById('new-file-tambahan-img').src = e.target.result; document.getElementById('new-file-tambahan-preview').classList.remove('d-none'); document.getElementById('new-file-tambahan-preview').classList.add('d-inline-block'); }; reader.readAsDataURL(this.files[0]); } else { document.getElementById('new-file-tambahan-preview').classList.add('d-none'); document.getElementById('new-file-tambahan-preview').classList.remove('d-inline-block'); }">
+                        <small class="text-muted d-block mt-1">Opsional. File ini akan digabungkan di halaman kedua PDF sertifikat.</small>
                     </div>
 
-                    <hr style="border-color:var(--crm-border-soft);margin:0.5rem 0;">
+                    <div class="mt-4 p-3 rounded-4 bg-light border d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold text-dark small"><i class="bi bi-magic me-1 text-warning"></i> Custom Template Builder</div>
+                            <div class="text-muted" style="font-size:0.75rem;">Buat template custom untuk sertifikat lolos dengan drag &amp; drop visual.</div>
+                        </div>
+                        <a href="{{ route('admin.crm.certificates.template-builder', ['event' => $event, 'type' => 'lolos']) }}" class="btn btn-sm btn-primary fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
+                            Buka Builder
+                        </a>
+                    </div>
 
-                    {{-- Signatures --}}
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <label class="form-field-label mb-0">Tanda Tangan Digital</label>
-                            <button type="button" onclick="addSignatureField()" class="btn btn-sm fw-700" style="font-size:0.65rem;color:var(--crm-primary);background:rgba(124,58,237,0.08);border-radius:6px;padding:3px 10px;">
-                                <i class="bi bi-plus-lg me-1"></i>Tambah TTD
-                            </button>
+                    @if(!empty($event->certificate_custom_template))
+                    <div class="mt-3 p-3 rounded-4 border d-flex justify-content-between align-items-center" style="background:#ecfdf5; border-color:#a7f3d0;">
+                        <div>
+                            <div class="fw-bold text-success small"><i class="bi bi-patch-check-fill me-1"></i> Menggunakan Template Custom Lolos</div>
+                            <div class="text-muted" style="font-size:0.75rem;">Template custom aktif untuk sertifikat peserta lolos.</div>
+                        </div>
+                        <button type="submit" form="reset-custom-form-lolos" class="btn btn-sm btn-outline-danger fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
+                            Hapus Custom
+                        </button>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Step 2 (Lolos) --}}
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">2</div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Kelola Aset Visual {{ $isLomba ? '(Peserta Lolos)' : '' }}</h6>
+                    </div>
+
+                    <div class="row g-4">
+                        {{-- Logos --}}
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-field-label mb-0">Logo Partner Tambahan</label>
+                                <button type="button" id="addLogoBtn" onclick="addLogoField('lolos')" class="btn btn-sm fw-700" style="font-size:0.65rem;color:var(--crm-primary);background:rgba(124,58,237,0.08);border-radius:6px;padding:3px 10px;">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah Baris
+                                </button>
+                            </div>
+                            <div id="logoUploadContainer" class="mb-3">
+                                <input type="file" name="certificate_logo[]" class="form-field mb-2 logo-file-input" accept="image/*" onchange="onLogoFileChange(this, 'init_lolos_0', 'lolos')">
+                            </div>
+                            
+                            <div id="existingLogos" class="d-flex flex-wrap gap-3">
+                                @foreach($logosLolos as $logo)
+                                    <div class="asset-item">
+                                        <img src="{{ asset('uploads/' . $logo) }}" style="height:40px;object-fit:contain;">
+                                        <div class="asset-delete" onclick="markDelete('logo', '{{ $logo }}', this, event, 'lolos')"><i class="bi bi-x"></i></div>
+                                        <input type="hidden" name="delete_logos[]" value="" class="delete-logo-input">
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
 
-                        <div id="signaturesContainer">
-                            @php
-                                $sigs = is_array($event->certificate_signature) ? $event->certificate_signature : ($event->certificate_signature ? [$event->certificate_signature] : []);
-                            @endphp
-                            @foreach($sigs as $i => $sig)
-                                @php
-                                    $isObj = is_array($sig);
-                                    $sigPath = $isObj ? ($sig['image'] ?? '') : $sig;
-                                    $sigName = $isObj ? ($sig['name'] ?? '') : '';
-                                    $sigPos  = $isObj ? ($sig['position'] ?? '') : '';
-                                @endphp
-                                <div class="sig-entry">
-                                    <div class="row g-3">
-                                        <div class="col-md-4">
-                                            <label class="form-field-label">Gambar TTD <span class="text-danger">*</span></label>
-                                            @if($sigPath)
-                                                <div class="d-flex align-items-center gap-3 mb-2">
-                                                    <img src="{{ asset('uploads/' . $sigPath) }}" style="height:45px;background:#fff;padding:4px;border-radius:6px;border:1px solid var(--crm-border);object-fit:contain;">
-                                                    <label style="font-size:0.75rem;font-weight:700;color:var(--crm-primary);cursor:pointer;">
-                                                        <input type="checkbox" name="replace_sig_{{ $i }}" value="1" style="display:none;" class="sig-replace-checkbox" onchange="toggleSigReplace(this, {{ $i }})">
-                                                        Ganti Gambar
-                                                    </label>
-                                                </div>
-                                                <input type="hidden" name="existing_signature_image[{{ $i }}]" value="{{ $sigPath }}" class="existing-sig-path">
-                                                <div id="sig_file_{{ $i }}" style="display:none;">
-                                                    <input type="file" name="certificate_signature_file[{{ $i }}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, {{ $i }})">
-                                                </div>
-                                            @else
-                                                <input type="file" name="certificate_signature_file[{{ $i }}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, {{ $i }})">
-                                            @endif
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label class="form-field-label">Nama Penandatangan</label>
-                                            <input type="text" name="signature_name[{{ $i }}]" value="{{ $sigName }}" class="form-field sig-name-input" placeholder="cth: Dr. Ahmad Fauzi" onkeyup="renderPreview()">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <label class="form-field-label mb-0">Jabatan</label>
-                                                <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-700" style="font-size:0.65rem;" onclick="removeSigEntry(this, '{{ $sigPath }}', event)">Hapus</button>
+                        <hr style="border-color:var(--crm-border-soft);margin:0.5rem 0;">
+
+                        {{-- Signatures --}}
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-field-label mb-0">Tanda Tangan Digital</label>
+                                <button type="button" id="addSigBtn" onclick="addSignatureField('lolos')" class="btn btn-sm fw-700" style="font-size:0.65rem;color:var(--crm-primary);background:rgba(124,58,237,0.08);border-radius:6px;padding:3px 10px;">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah TTD
+                                </button>
+                            </div>
+
+                            <div id="signaturesContainer">
+                                @foreach($sigsLolos as $i => $sig)
+                                    @php
+                                        $isObj = is_array($sig);
+                                        $sigPath = $isObj ? ($sig['image'] ?? '') : $sig;
+                                        $sigName = $isObj ? ($sig['name'] ?? '') : '';
+                                        $sigPos  = $isObj ? ($sig['position'] ?? '') : '';
+                                    @endphp
+                                    <div class="sig-entry">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-field-label">Gambar TTD <span class="text-danger">*</span></label>
+                                                @if($sigPath)
+                                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                                        <img src="{{ asset('uploads/' . $sigPath) }}" style="height:45px;background:#fff;padding:4px;border-radius:6px;border:1px solid var(--crm-border);object-fit:contain;">
+                                                        <label style="font-size:0.75rem;font-weight:700;color:var(--crm-primary);cursor:pointer;">
+                                                            <input type="checkbox" name="replace_sig_{{ $i }}" value="1" style="display:none;" class="sig-replace-checkbox" onchange="toggleSigReplace(this, {{ $i }}, 'lolos')">
+                                                            Ganti Gambar
+                                                        </label>
+                                                    </div>
+                                                    <input type="hidden" name="existing_signature_image[{{ $i }}]" value="{{ $sigPath }}" class="existing-sig-path">
+                                                    <div id="sig_file_lolos_{{ $i }}" style="display:none;">
+                                                        <input type="file" name="certificate_signature_file[{{ $i }}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, {{ $i }}, 'lolos')">
+                                                    </div>
+                                                @else
+                                                    <input type="file" name="certificate_signature_file[{{ $i }}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, {{ $i }}, 'lolos')">
+                                                @endif
                                             </div>
-                                            <input type="text" name="signature_position[{{ $i }}]" value="{{ $sigPos }}" class="form-field sig-pos-input" placeholder="cth: Direktur Utama" onkeyup="renderPreview()">
-                                            <input type="hidden" name="delete_signatures[]" value="" class="delete-sig-input">
+                                            <div class="col-md-4">
+                                                <label class="form-field-label">Nama Penandatangan</label>
+                                                <input type="text" name="signature_name[{{ $i }}]" value="{{ $sigName }}" class="form-field sig-name-input" placeholder="cth: Dr. Ahmad Fauzi" onkeyup="renderPreview()">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <label class="form-field-label mb-0">Jabatan</label>
+                                                    <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-700" style="font-size:0.65rem;" onclick="removeSigEntry(this, '{{ $sigPath }}', event, 'lolos')">Hapus</button>
+                                                </div>
+                                                <input type="text" name="signature_position[{{ $i }}]" value="{{ $sigPos }}" class="form-field sig-pos-input" placeholder="cth: Direktur Utama" onkeyup="renderPreview()">
+                                                <input type="hidden" name="delete_signatures[]" value="" class="delete-sig-input">
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            @if($isLomba)
+            {{-- SECTION 2: TIDAK LOLOS --}}
+            <div id="pane-tidak-lolos" class="cert-pane" style="display: none;">
+                <div class="p-3 mb-3 rounded-3" style="background:#f8fafc; border: 1px solid #cbd5e1;">
+                    <div class="fw-800 text-secondary small"><i class="bi bi-info-circle-fill me-1"></i> Desain Sertifikat: Peserta Tidak Lolos / Partisipan</div>
+                    <div class="text-muted" style="font-size:0.75rem;">Konfigurasi template, logo, dan tanda tangan khusus untuk peserta yang belum lolos ke babak berikutnya (apresiasi kepesertaan).</div>
+                </div>
+
+                {{-- Step 1 (Tidak Lolos) --}}
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">1</div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Pilih Template Desain (Peserta Tidak Lolos)</h6>
+                    </div>
+                    
+                    <div class="row g-3 template-card-container">
+                        @foreach($tpls as $t)
+                        <div class="col-md-6">
+                            <div class="template-card template-card-tidak-lolos {{ ($event->certificate_template_tidak_lolos ?? 'template_1') == $t['id'] ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this, 'tidak_lolos')">
+                                <div class="check-icon"><i class="bi bi-check"></i></div>
+                                <div class="template-preview" style="background:{{ $t['bg'] }}; color:{{ $t['color'] ?? '#fff' }};">
+                                    <i class="bi {{ $t['icon'] }}"></i>
+                                </div>
+                                <div class="p-3">
+                                    <div style="font-weight:700;font-size:0.85rem;color:var(--crm-navy);">{{ $t['name'] }}</div>
+                                    <div style="font-size:0.7rem;color:var(--crm-text-subtle);line-height:1.4;margin-top:2px;">{{ $t['desc'] }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="certificate_template_tidak_lolos" id="selected_template_tidak_lolos" value="{{ $event->certificate_template_tidak_lolos ?? 'template_1' }}">
+                    
+                    <div class="d-flex mt-4 justify-content-between align-items-center mb-2">
+                        <label class="form-field-label mb-0">File Tambahan (Halaman Kedua)</label>
+                    </div>
+                    <div class="mb-3">
+                        @if(!empty($event->file_tambahan_tidak_lolos))
+                            <div class="mb-2 position-relative d-inline-block" style="width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);" id="existing-file-tambahan-tidak-lolos-container">
+                                <img src="{{ asset('uploads/' . str_replace('storage/', '', $event->file_tambahan_tidak_lolos)) }}" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="File Tambahan Tidak Lolos">
+                                <label class="position-absolute d-flex align-items-center justify-content-center" style="top:5px; right:5px; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:6px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Hapus File Tambahan">
+                                    <input type="checkbox" name="delete_file_tambahan_tidak_lolos" value="1" class="d-none" onchange="document.getElementById('existing-file-tambahan-tidak-lolos-container').style.opacity = this.checked ? '0.3' : '1';">
+                                    <i class="bi bi-trash text-danger" style="font-size:0.75rem;"></i>
+                                </label>
+                            </div>
+                        @endif
+                        <div class="mb-2 d-none position-relative" id="new-file-tambahan-tidak-lolos-preview" style="width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);">
+                            <img id="new-file-tambahan-tidak-lolos-img" src="" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="New File Tambahan Tidak Lolos">
+                            <span class="position-absolute badge bg-primary" style="bottom: 5px; right: 5px;">Baru</span>
+                        </div>
+                        <input type="file" accept="image/*" name="file_tambahan_tidak_lolos" class="form-field mb-2" onchange="if(this.files && this.files[0]) { let reader = new FileReader(); reader.onload = function(e) { document.getElementById('new-file-tambahan-tidak-lolos-img').src = e.target.result; document.getElementById('new-file-tambahan-tidak-lolos-preview').classList.remove('d-none'); document.getElementById('new-file-tambahan-tidak-lolos-preview').classList.add('d-inline-block'); }; reader.readAsDataURL(this.files[0]); } else { document.getElementById('new-file-tambahan-tidak-lolos-preview').classList.add('d-none'); document.getElementById('new-file-tambahan-tidak-lolos-preview').classList.remove('d-inline-block'); }">
+                        <small class="text-muted d-block mt-1">Opsional. File ini akan digabungkan di halaman kedua PDF sertifikat tidak lolos.</small>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-4 bg-light border d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold text-dark small"><i class="bi bi-magic me-1 text-warning"></i> Custom Template Builder</div>
+                            <div class="text-muted" style="font-size:0.75rem;">Buat template custom untuk sertifikat tidak lolos dengan drag &amp; drop visual.</div>
+                        </div>
+                        <a href="{{ route('admin.crm.certificates.template-builder', ['event' => $event, 'type' => 'tidak_lolos']) }}" class="btn btn-sm btn-secondary fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
+                            Buka Builder
+                        </a>
+                    </div>
+
+                    @if(!empty($event->certificate_custom_template_tidak_lolos))
+                    <div class="mt-3 p-3 rounded-4 border d-flex justify-content-between align-items-center" style="background:#f8fafc; border-color:#cbd5e1;">
+                        <div>
+                            <div class="fw-bold text-secondary small"><i class="bi bi-patch-check-fill me-1"></i> Menggunakan Template Custom Tidak Lolos</div>
+                            <div class="text-muted" style="font-size:0.75rem;">Template custom aktif untuk sertifikat peserta tidak lolos.</div>
+                        </div>
+                        <button type="submit" form="reset-custom-form-tidak-lolos" class="btn btn-sm btn-outline-danger fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
+                            Hapus Custom
+                        </button>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Step 2 (Tidak Lolos) --}}
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">2</div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Kelola Aset Visual (Peserta Tidak Lolos)</h6>
+                    </div>
+
+                    <div class="row g-4">
+                        {{-- Logos --}}
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-field-label mb-0">Logo Partner Tambahan</label>
+                                <button type="button" id="addLogoBtn_tidak_lolos" onclick="addLogoField('tidak_lolos')" class="btn btn-sm fw-700" style="font-size:0.65rem;color:var(--crm-primary);background:rgba(124,58,237,0.08);border-radius:6px;padding:3px 10px;">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah Baris
+                                </button>
+                            </div>
+                            <div id="logoUploadContainer_tidak_lolos" class="mb-3">
+                                <input type="file" name="certificate_logo_tidak_lolos[]" class="form-field mb-2 logo-file-input" accept="image/*" onchange="onLogoFileChange(this, 'init_tidak_lolos_0', 'tidak_lolos')">
+                            </div>
+                            
+                            <div id="existingLogos_tidak_lolos" class="d-flex flex-wrap gap-3">
+                                @foreach($logosTidakLolos as $logo)
+                                    <div class="asset-item">
+                                        <img src="{{ asset('uploads/' . $logo) }}" style="height:40px;object-fit:contain;">
+                                        <div class="asset-delete" onclick="markDelete('logo', '{{ $logo }}', this, event, 'tidak_lolos')"><i class="bi bi-x"></i></div>
+                                        <input type="hidden" name="delete_logos_tidak_lolos[]" value="" class="delete-logo-input-tidak-lolos">
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <hr style="border-color:var(--crm-border-soft);margin:0.5rem 0;">
+
+                        {{-- Signatures --}}
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-field-label mb-0">Tanda Tangan Digital</label>
+                                <button type="button" id="addSigBtn_tidak_lolos" onclick="addSignatureField('tidak_lolos')" class="btn btn-sm fw-700" style="font-size:0.65rem;color:var(--crm-primary);background:rgba(124,58,237,0.08);border-radius:6px;padding:3px 10px;">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah TTD
+                                </button>
+                            </div>
+
+                            <div id="signaturesContainer_tidak_lolos">
+                                @foreach($sigsTidakLolos as $i => $sig)
+                                    @php
+                                        $isObj = is_array($sig);
+                                        $sigPath = $isObj ? ($sig['image'] ?? '') : $sig;
+                                        $sigName = $isObj ? ($sig['name'] ?? '') : '';
+                                        $sigPos  = $isObj ? ($sig['position'] ?? '') : '';
+                                    @endphp
+                                    <div class="sig-entry">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-field-label">Gambar TTD <span class="text-danger">*</span></label>
+                                                @if($sigPath)
+                                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                                        <img src="{{ asset('uploads/' . $sigPath) }}" style="height:45px;background:#fff;padding:4px;border-radius:6px;border:1px solid var(--crm-border);object-fit:contain;">
+                                                        <label style="font-size:0.75rem;font-weight:700;color:var(--crm-primary);cursor:pointer;">
+                                                            <input type="checkbox" name="replace_sig_tidak_lolos_{{ $i }}" value="1" style="display:none;" class="sig-replace-checkbox" onchange="toggleSigReplace(this, {{ $i }}, 'tidak_lolos')">
+                                                            Ganti Gambar
+                                                        </label>
+                                                    </div>
+                                                    <input type="hidden" name="existing_signature_image_tidak_lolos[{{ $i }}]" value="{{ $sigPath }}" class="existing-sig-path">
+                                                    <div id="sig_file_tidak_lolos_{{ $i }}" style="display:none;">
+                                                        <input type="file" name="certificate_signature_file_tidak_lolos[{{ $i }}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, {{ $i }}, 'tidak_lolos')">
+                                                    </div>
+                                                @else
+                                                    <input type="file" name="certificate_signature_file_tidak_lolos[{{ $i }}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, {{ $i }}, 'tidak_lolos')">
+                                                @endif
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-field-label">Nama Penandatangan</label>
+                                                <input type="text" name="signature_name_tidak_lolos[{{ $i }}]" value="{{ $sigName }}" class="form-field sig-name-input" placeholder="cth: Dr. Ahmad Fauzi" onkeyup="renderPreview()">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <label class="form-field-label mb-0">Jabatan</label>
+                                                    <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-700" style="font-size:0.65rem;" onclick="removeSigEntry(this, '{{ $sigPath }}', event, 'tidak_lolos')">Hapus</button>
+                                                </div>
+                                                <input type="text" name="signature_position_tidak_lolos[{{ $i }}]" value="{{ $sigPos }}" class="form-field sig-pos-input" placeholder="cth: Direktur Utama" onkeyup="renderPreview()">
+                                                <input type="hidden" name="delete_signatures_tidak_lolos[]" value="" class="delete-sig-input-tidak-lolos">
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="d-flex justify-content-end mb-4">
-                <button type="submit" class="btn fw-800 px-5" style="background:var(--crm-navy);color:#fff;border-radius:10px;padding-top:0.75rem;padding-bottom:0.75rem;">Simpan Perubahan</button>
+                <button type="submit" class="btn fw-800 px-5 shadow-sm" style="background:var(--crm-navy);color:#fff;border-radius:10px;padding-top:0.75rem;padding-bottom:0.75rem;">
+                    <i class="bi bi-save me-2"></i>Simpan Perubahan
+                </button>
             </div>
         </div>
 
@@ -658,9 +879,23 @@
         <div class="col-lg-6">
             <!-- Certificate Live Preview Card -->
             <div class="card-minimal p-4 mb-4 sticky-top shadow-sm" style="top: 20px; z-index: 10; background: #fff; border: 1px solid var(--crm-border-soft); border-radius: 16px;">
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;"><i class="bi bi-eye-fill"></i></div>
-                    <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Live Preview Sertifikat</h6>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;"><i class="bi bi-eye-fill"></i></div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Live Preview Sertifikat</h6>
+                    </div>
+                    
+                    @if($isLomba)
+                    <!-- Preview Switcher -->
+                    <div class="d-flex gap-1">
+                        <button type="button" class="preview-switcher-btn active" data-section="lolos" onclick="switchSection('lolos')">
+                            <i class="bi bi-trophy-fill text-success me-1"></i>Lolos
+                        </button>
+                        <button type="button" class="preview-switcher-btn" data-section="tidak_lolos" onclick="switchSection('tidak_lolos')">
+                            <i class="bi bi-award text-secondary me-1"></i>Tidak Lolos
+                        </button>
+                    </div>
+                    @endif
                 </div>
                 
                 <!-- Scaling Container -->
@@ -673,12 +908,9 @@
                                 
                                 <!-- Template 1 Decorations -->
                                 <div class="template-decorations-1">
-                                    <!-- Top Left Gold Bar -->
                                     <div style="position: absolute; top: 46px; left: 50px; width: 480px; height: 4px; background: #eab308; z-index: 2;"></div>
-                                    <!-- Bottom Right Gold Bar -->
                                     <div style="position: absolute; bottom: 46px; right: 50px; width: 480px; height: 4px; background: #eab308; z-index: 2;"></div>
 
-                                    <!-- Top Right Maroon & Gold Waves -->
                                     <div style="position: absolute; top: 0; right: 0; width: 412px; height: 366px; z-index: 1; pointer-events: none;">
                                         <svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                                             <path d="M 30,0 C 50,40 70,60 100,80 L 100,0 Z" fill="#7f1d1d" />
@@ -689,7 +921,6 @@
                                         </svg>
                                     </div>
 
-                                    <!-- Bottom Left Maroon & Gold Waves -->
                                     <div style="position: absolute; bottom: 0; left: 0; width: 412px; height: 366px; z-index: 1; pointer-events: none;">
                                         <svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                                             <path d="M 0,30 C 40,50 60,70 80,100 L 0,100 Z" fill="#7f1d1d" />
@@ -703,24 +934,17 @@
 
                                 <!-- Template 2 Decorations -->
                                 <div class="template-decorations-2">
-                                    <!-- SVG background decorations -->
                                     <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;">
                                         <svg width="100%" height="100%" viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                                            <!-- Top-left diagonal gold ribbon -->
                                             <polygon points="0,0 60,0 0,60" fill="#d4af37" />
                                             <polygon points="0,0 55,0 0,55" fill="#fef08a" />
                                             <polygon points="0,0 40,0 0,40" fill="#ca8a04" />
-                                            
-                                            <!-- Right side navy & gold triangles -->
                                             <polygon points="297,0 215,0 297,125" fill="#0f172a" />
                                             <polygon points="297,210 185,210 297,135" fill="#ca8a04" />
                                             <polygon points="297,210 190,210 297,137" fill="#fbbf24" />
                                         </svg>
                                     </div>
-                                    
-                                    <div class="gold-badge">
-                                        <div class="gold-badge-inner"></div>
-                                    </div>
+                                    <div class="gold-badge"><div class="gold-badge-inner"></div></div>
                                 </div>
 
                                 <!-- Template 3 Decorations -->
@@ -749,20 +973,19 @@
                                     <div class="recipient-underline"></div>
 
                                     <p style="font-size: 8.5pt; margin: 8px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">Atas Partisipasinya Sebagai</p>
-                                    <p style="font-size: 13pt; font-weight: bold; margin: 4px 0 8px 0; font-family: Arial, Helvetica, sans-serif;">PESERTA</p>
-                                    <p style="font-size: 8.5pt; margin: 8px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">Dalam Kegiatan Workshop</p>
+                                    <p style="font-size: 13pt; font-weight: bold; margin: 4px 0 8px 0; font-family: Arial, Helvetica, sans-serif;" id="preview-t4-role">
+                                        {{ $isLomba ? 'PESERTA LOLOS / FINALIS' : 'PESERTA' }}
+                                    </p>
+                                    <p style="font-size: 8.5pt; margin: 8px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">Dalam Kegiatan</p>
                                     
                                     <h2 style="font-size: 14pt; font-weight: bold; margin: 4px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">
                                         "{{ $event->title }}"
                                     </h2>
-                                    <p style="font-size: 8.5pt; margin: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif;">
-                                        Designing Learning Experiences to Develop Real Competencies and Professional Portfolios
-                                    </p>
                                     
                                     <p style="font-size: 8pt; margin: 9px 0 0 0; font-family: Arial, Helvetica, sans-serif;">
                                         Yang diselenggarakan pada: 
                                         <strong>
-                                            @if($event->event_until_date && $event->event_date->format('m Y') == $event->event_until_date->format('m Y'))
+                                            @if($event->event_until_date && $event->event_date && $event->event_date->format('m Y') == $event->event_until_date->format('m Y'))
                                                 {{ $event->event_date->format('d') }}-{{ $event->event_until_date->format('d F Y') }}
                                             @else
                                                 {{ $event->event_date?->format('d F Y') }}
@@ -842,33 +1065,92 @@
         </div>
     </div>
 </form>
+
+@if(!empty($event->certificate_custom_template))
+<form id="reset-custom-form-lolos" action="{{ route('admin.crm.certificates.reset-custom-template', $event) }}" method="POST" style="display:none;" onsubmit="return confirm('Hapus template custom lolos dan kembali ke template standar?')">
+    @csrf
+    <input type="hidden" name="type" value="lolos">
+</form>
+@endif
+
+@if($isLomba && !empty($event->certificate_custom_template_tidak_lolos))
+<form id="reset-custom-form-tidak-lolos" action="{{ route('admin.crm.certificates.reset-custom-template', $event) }}" method="POST" style="display:none;" onsubmit="return confirm('Hapus template custom tidak lolos dan kembali ke template standar?')">
+    @csrf
+    <input type="hidden" name="type" value="tidak_lolos">
+</form>
+@endif
 @endsection
 
 @section('scripts')
 <script>
+    const isLomba = {{ $isLomba ? 'true' : 'false' }};
+    let currentSection = 'lolos'; // 'lolos' or 'tidak_lolos'
+
     // Global data stores for preview assets
     const uploadedFiles = {
-        logos: {},
-        signatures: {}
+        lolos: { logos: {}, signatures: {} },
+        tidak_lolos: { logos: {}, signatures: {} }
     };
 
-    function selectTemplate(id, element) {
-        document.querySelectorAll('.template-card').forEach(el => el.classList.remove('active'));
-        element.classList.add('active');
-        document.getElementById('selected_template').value = id;
+    function switchSection(section) {
+        currentSection = section;
+
+        // Update nav buttons
+        document.querySelectorAll('.cert-section-nav-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.section === section);
+        });
+
+        // Update preview toggle buttons
+        document.querySelectorAll('.preview-switcher-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.section === section);
+        });
+
+        // Update tab panes
+        const paneLolos = document.getElementById('pane-lolos');
+        const paneTidakLolos = document.getElementById('pane-tidak-lolos');
+        if (paneLolos && paneTidakLolos) {
+            if (section === 'lolos') {
+                paneLolos.style.display = 'block';
+                paneTidakLolos.style.display = 'none';
+            } else {
+                paneLolos.style.display = 'none';
+                paneTidakLolos.style.display = 'block';
+            }
+        }
+
+        checkLogoCount(section);
         renderPreview();
     }
 
-    function markDelete(type, path, element, event) {
+    function selectTemplate(id, element, section = 'lolos') {
+        const parentContainer = element.closest('.template-card-container');
+        if (parentContainer) {
+            parentContainer.querySelectorAll('.template-card').forEach(el => el.classList.remove('active'));
+        }
+        element.classList.add('active');
+
+        const inputId = (section === 'tidak_lolos') ? 'selected_template_tidak_lolos' : 'selected_template_lolos';
+        const input = document.getElementById(inputId);
+        if (input) input.value = id;
+
+        if (currentSection !== section) {
+            switchSection(section);
+        } else {
+            renderPreview();
+        }
+    }
+
+    function markDelete(type, path, element, event, section = 'lolos') {
         if(event) { event.preventDefault(); event.stopPropagation(); }
         if(confirm('Hapus aset ini?')) {
             const wrapper = element.closest('.asset-item');
-            const input = wrapper.querySelector('.delete-logo-input');
+            const hiddenClass = (section === 'tidak_lolos') ? '.delete-logo-input-tidak-lolos' : '.delete-logo-input';
+            const input = wrapper.querySelector(hiddenClass);
             if (input) input.value = path;
             wrapper.style.opacity = '0.3';
             wrapper.style.pointerEvents = 'none';
             wrapper.classList.add('marked-deleted');
-            checkLogoCount();
+            checkLogoCount(section);
             renderPreview();
         }
     }
@@ -884,133 +1166,156 @@
                 input.parentElement.appendChild(preview);
             }
             const reader = new FileReader();
-            reader.onload = function(e) { preview.src = e.target.result; }
+            reader.onload = function(e) { preview.src = e.target.result; };
             reader.readAsDataURL(file);
         }
     }
 
-    function onLogoFileChange(input, id) {
+    function onLogoFileChange(input, id, section = 'lolos') {
         previewNewAsset(input);
         const file = input.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                uploadedFiles.logos[id] = e.target.result;
+                uploadedFiles[section].logos[id] = e.target.result;
                 renderPreview();
             };
             reader.readAsDataURL(file);
         } else {
-            delete uploadedFiles.logos[id];
+            delete uploadedFiles[section].logos[id];
             renderPreview();
         }
     }
 
-    function onRemoveLogoField(btn, id) {
+    function onRemoveLogoField(btn, id, section = 'lolos') {
         btn.parentElement.remove();
-        delete uploadedFiles.logos[id];
-        checkLogoCount();
+        delete uploadedFiles[section].logos[id];
+        checkLogoCount(section);
         renderPreview();
     }
 
-    let logoFileCounter = 1;
-    function addLogoField() {
-        const container = document.getElementById('logoUploadContainer');
+    let logoFileCounter = { lolos: 1, tidak_lolos: 1 };
+    function addLogoField(section = 'lolos') {
+        const containerId = (section === 'tidak_lolos') ? 'logoUploadContainer_tidak_lolos' : 'logoUploadContainer';
+        const existingContainerId = (section === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : 'existingLogos';
+        const inputName = (section === 'tidak_lolos') ? 'certificate_logo_tidak_lolos[]' : 'certificate_logo[]';
+        
+        const container = document.getElementById(containerId);
+        if (!container) return;
         const currentInputs = container.querySelectorAll('input[type="file"]').length;
-        const existingLogos = document.querySelectorAll('.asset-item:not(.marked-deleted)').length;
+        const existingLogos = document.querySelectorAll(`#${existingContainerId} .asset-item:not(.marked-deleted)`).length;
+        
         if ((currentInputs + existingLogos) < 3) {
-            const id = 'dyn_' + logoFileCounter++;
+            const id = 'dyn_' + (logoFileCounter[section]++);
             const div = document.createElement('div');
             div.className = 'd-flex gap-2 mb-2';
             div.innerHTML = `
-                <div class="w-100"><input type="file" name="certificate_logo[]" class="form-field logo-file-input" accept="image/*" onchange="onLogoFileChange(this, '${id}')"></div>
-                <button type="button" class="btn btn-sm btn-outline-danger" style="border-radius:8px;" onclick="onRemoveLogoField(this, '${id}')"><i class="bi bi-trash"></i></button>
+                <div class="w-100"><input type="file" name="${inputName}" class="form-field logo-file-input" accept="image/*" onchange="onLogoFileChange(this, '${id}', '${section}')"></div>
+                <button type="button" class="btn btn-sm btn-outline-danger" style="border-radius:8px;" onclick="onRemoveLogoField(this, '${id}', '${section}')"><i class="bi bi-trash"></i></button>
             `;
             container.appendChild(div);
-            checkLogoCount();
+            checkLogoCount(section);
         }
     }
 
-    function checkLogoCount() {
-        const currentInputs = document.querySelectorAll('#logoUploadContainer input[type="file"]').length;
-        const existingLogos = document.querySelectorAll('.asset-item:not(.marked-deleted)').length;
-        const btn = document.getElementById('addLogoBtn');
+    function checkLogoCount(section = 'lolos') {
+        const containerId = (section === 'tidak_lolos') ? 'logoUploadContainer_tidak_lolos' : 'logoUploadContainer';
+        const existingContainerId = (section === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : 'existingLogos';
+        const btnId = (section === 'tidak_lolos') ? 'addLogoBtn_tidak_lolos' : 'addLogoBtn';
+        
+        const container = document.getElementById(containerId);
+        const btn = document.getElementById(btnId);
+        if (!container || !btn) return;
+        
+        const currentInputs = container.querySelectorAll('input[type="file"]').length;
+        const existingLogos = document.querySelectorAll(`#${existingContainerId} .asset-item:not(.marked-deleted)`).length;
         if ((currentInputs + existingLogos) >= 3) btn.style.display = 'none';
         else btn.style.display = 'inline-flex';
     }
 
-    let sigIndex = {{ count(is_array($event->certificate_signature) ? $event->certificate_signature : ($event->certificate_signature ? [$event->certificate_signature] : [])) }};
-    let sigFileCounter = 100;
+    let sigIndex = {
+        lolos: {{ count($sigsLolos) }},
+        tidak_lolos: {{ count($sigsTidakLolos) }}
+    };
+    let sigFileCounter = { lolos: 100, tidak_lolos: 200 };
 
-    function addSignatureField() {
-        const container = document.getElementById('signaturesContainer');
+    function addSignatureField(section = 'lolos') {
+        const containerId = (section === 'tidak_lolos') ? 'signaturesContainer_tidak_lolos' : 'signaturesContainer';
+        const container = document.getElementById(containerId);
+        if (!container) return;
         const existing = container.querySelectorAll('.sig-entry').length;
         if (existing >= 3) { alert('Maksimal 3 tanda tangan.'); return; }
         
-        const idx = sigIndex++;
-        const uniqueId = 'new_' + sigFileCounter++;
+        const idx = sigIndex[section]++;
+        const uniqueId = 'new_' + (sigFileCounter[section]++);
+        const fileField = (section === 'tidak_lolos') ? `certificate_signature_file_tidak_lolos[${idx}]` : `certificate_signature_file[${idx}]`;
+        const nameField = (section === 'tidak_lolos') ? `signature_name_tidak_lolos[${idx}]` : `signature_name[${idx}]`;
+        const posField  = (section === 'tidak_lolos') ? `signature_position_tidak_lolos[${idx}]` : `signature_position[${idx}]`;
+
         const div = document.createElement('div');
         div.className = 'sig-entry';
         div.innerHTML = `
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-field-label">Gambar TTD <span class="text-danger">*</span></label>
-                    <input type="file" name="certificate_signature_file[${idx}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, '${uniqueId}')">
+                    <input type="file" name="${fileField}" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, '${uniqueId}', '${section}')">
                 </div>
                 <div class="col-md-4">
                     <label class="form-field-label">Nama Penandatangan</label>
-                    <input type="text" name="signature_name[${idx}]" class="form-field sig-name-input" placeholder="cth: Dr. Ahmad Fauzi" onkeyup="renderPreview()">
+                    <input type="text" name="${nameField}" class="form-field sig-name-input" placeholder="cth: Dr. Ahmad Fauzi" onkeyup="renderPreview()">
                 </div>
                 <div class="col-md-4">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label class="form-field-label mb-0">Jabatan</label>
-                        <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-700" style="font-size:0.65rem;" onclick="onRemoveSigRow(this, '${uniqueId}')">Hapus</button>
+                        <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-700" style="font-size:0.65rem;" onclick="onRemoveSigRow(this, '${uniqueId}', '${section}')">Hapus</button>
                     </div>
-                    <input type="text" name="signature_position[${idx}]" class="form-field sig-pos-input" placeholder="cth: Direktur Utama" onkeyup="renderPreview()">
+                    <input type="text" name="${posField}" class="form-field sig-pos-input" placeholder="cth: Direktur Utama" onkeyup="renderPreview()">
                 </div>
             </div>`;
         container.appendChild(div);
         renderPreview();
     }
 
-    function onRemoveSigRow(btn, uniqueId) {
+    function onRemoveSigRow(btn, uniqueId, section = 'lolos') {
         btn.closest('.sig-entry').remove();
-        delete uploadedFiles.signatures[uniqueId];
+        delete uploadedFiles[section].signatures[uniqueId];
         renderPreview();
     }
 
-    function onSigFileChange(input, idx) {
-        previewNewAsset(input);
+    function onSigFileChange(input, id, section = 'lolos') {
         const file = input.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                uploadedFiles.signatures[idx] = e.target.result;
+                uploadedFiles[section].signatures[id] = e.target.result;
                 renderPreview();
             };
             reader.readAsDataURL(file);
         } else {
-            delete uploadedFiles.signatures[idx];
+            delete uploadedFiles[section].signatures[id];
             renderPreview();
         }
     }
 
-    function toggleSigReplace(checkbox, idx) {
-        const fileDiv = document.getElementById('sig_file_' + idx);
-        if (fileDiv) fileDiv.style.display = checkbox.checked ? 'block' : 'none';
+    function toggleSigReplace(checkbox, idx, section = 'lolos') {
+        const fileDiv = document.getElementById(`sig_file_${section}_${idx}`);
+        if (!fileDiv) return;
+        fileDiv.style.display = checkbox.checked ? 'block' : 'none';
         if (!checkbox.checked) {
             const fileInput = fileDiv.querySelector('input[type="file"]');
             if (fileInput) fileInput.value = '';
-            delete uploadedFiles.signatures[idx];
+            delete uploadedFiles[section].signatures[idx];
         }
         renderPreview();
     }
 
-    function removeSigEntry(btn, path, event) {
+    function removeSigEntry(btn, path, event, section = 'lolos') {
         if(event) { event.preventDefault(); event.stopPropagation(); }
         if (!confirm('Hapus tanda tangan ini?')) return;
         const entry = btn.closest('.sig-entry');
         if (path) {
-            const hidden = entry.querySelector('.delete-sig-input');
+            const hiddenClass = (section === 'tidak_lolos') ? '.delete-sig-input-tidak-lolos' : '.delete-sig-input';
+            const hidden = entry.querySelector(hiddenClass);
             if (hidden) hidden.value = path;
             entry.style.opacity = '0.3';
             entry.style.pointerEvents = 'none';
@@ -1023,7 +1328,10 @@
 
     // Interactive Preview Engine
     function renderPreview() {
-        const template = document.getElementById('selected_template').value;
+        const inputId = (currentSection === 'tidak_lolos') ? 'selected_template_tidak_lolos' : 'selected_template_lolos';
+        const tplInput = document.getElementById(inputId);
+        const template = tplInput ? tplInput.value : 'template_1';
+        
         const page = document.getElementById('preview-cert-page');
         if (!page) return;
 
@@ -1054,6 +1362,31 @@
                 headerT12.style.cssText = 'padding: 40px 10px 0 10px; text-align: center;';
             } else {
                 headerT12.style.cssText = '';
+            }
+        }
+
+        // Dynamic texts for Lomba
+        const isLolos = (currentSection === 'lolos');
+        const badgeCertId = document.querySelector('.cert-id');
+        if (badgeCertId) {
+            badgeCertId.innerHTML = isLomba
+                ? `Verified Certificate ID: 009 &bull; <strong style="color:${isLolos ? '#059669' : '#64748b'}">${isLolos ? 'PESERTA LOLOS' : 'PESERTA TIDAK LOLOS'}</strong>`
+                : `Verified Certificate ID: 009`;
+        }
+
+        const t4Role = document.getElementById('preview-t4-role');
+        if (t4Role) {
+            t4Role.textContent = isLomba ? (isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA';
+        }
+
+        const completedText = document.getElementById('preview-completed-text');
+        if (completedText) {
+            if (isLomba) {
+                completedText.textContent = isLolos 
+                    ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi'
+                    : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi';
+            } else {
+                completedText.textContent = 'has successfully completed the program';
             }
         }
 
@@ -1088,11 +1421,7 @@
         }
         const nameDiv = document.querySelector('#preview-content-box .recipient-name');
         if (nameDiv) {
-            if (template === 'template_1') {
-                nameDiv.textContent = 'Nama Peserta Demo';
-            } else {
-                nameDiv.textContent = 'NAMA PESERTA DEMO';
-            }
+            nameDiv.textContent = (template === 'template_1') ? 'Nama Peserta Demo' : 'NAMA PESERTA DEMO';
         }
 
         const t4NameDiv = document.getElementById('preview-t4-name');
@@ -1134,10 +1463,13 @@
         }
         container.appendChild(mainImg);
 
+        const existingContainerId = (currentSection === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : 'existingLogos';
+        const deleteClass = (currentSection === 'tidak_lolos') ? '.delete-logo-input-tidak-lolos' : '.delete-logo-input';
+
         // Render existing logos
-        const existingLogos = document.querySelectorAll('#existingLogos .asset-item');
+        const existingLogos = document.querySelectorAll(`#${existingContainerId} .asset-item`);
         existingLogos.forEach(item => {
-            const deleteInput = item.querySelector('.delete-logo-input');
+            const deleteInput = item.querySelector(deleteClass);
             if (deleteInput && deleteInput.value === '') { // Not marked deleted
                 const img = item.querySelector('img');
                 if (img) {
@@ -1150,10 +1482,11 @@
         });
 
         // Render uploaded logos from store
-        Object.keys(uploadedFiles.logos).forEach(key => {
-            if (uploadedFiles.logos[key]) {
+        const store = uploadedFiles[currentSection].logos;
+        Object.keys(store).forEach(key => {
+            if (store[key]) {
                 const newImg = document.createElement('img');
-                newImg.src = uploadedFiles.logos[key];
+                newImg.src = store[key];
                 newImg.className = (template === 'template_4') ? 'logo-item-top' : 'logo-item';
                 container.appendChild(newImg);
             }
@@ -1165,12 +1498,17 @@
         if (!container) return;
         container.innerHTML = '';
 
-        const template = document.getElementById('selected_template').value;
+        const inputId = (currentSection === 'tidak_lolos') ? 'selected_template_tidak_lolos' : 'selected_template_lolos';
+        const tplInput = document.getElementById(inputId);
+        const template = tplInput ? tplInput.value : 'template_1';
 
-        const entries = document.querySelectorAll('#signaturesContainer .sig-entry');
+        const containerId = (currentSection === 'tidak_lolos') ? 'signaturesContainer_tidak_lolos' : 'signaturesContainer';
+        const deleteClass = (currentSection === 'tidak_lolos') ? '.delete-sig-input-tidak-lolos' : '.delete-sig-input';
+
+        const entries = document.querySelectorAll(`#${containerId} .sig-entry`);
         entries.forEach((entry, index) => {
             // Skip if marked deleted
-            const deleteInput = entry.querySelector('.delete-sig-input');
+            const deleteInput = entry.querySelector(deleteClass);
             if (deleteInput && deleteInput.value !== '') {
                 return;
             }
@@ -1194,8 +1532,8 @@
 
             if (existingPath && !isReplaced) {
                 imgSrc = "{{ asset('uploads') }}/" + existingPath;
-            } else if (uploadedFiles.signatures[idx]) {
-                imgSrc = uploadedFiles.signatures[idx];
+            } else if (uploadedFiles[currentSection].signatures[idx]) {
+                imgSrc = uploadedFiles[currentSection].signatures[idx];
             }
 
             const sigBox = document.createElement('div');
@@ -1245,17 +1583,13 @@
 
     // Initialize Page
     document.addEventListener('DOMContentLoaded', () => {
-        checkLogoCount();
+        checkLogoCount('lolos');
+        if (isLomba) {
+            checkLogoCount('tidak_lolos');
+        }
         renderPreview();
         
-        // Listen for new input fields events
         window.addEventListener('resize', scalePreview);
     });
 </script>
-
-@if(!empty($event->certificate_custom_template))
-<form id="reset-custom-form" action="{{ route('admin.crm.certificates.reset-custom-template', $event) }}" method="POST" style="display:none;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus template custom dan kembali menggunakan template bawaan?')">
-    @csrf
-</form>
-@endif
 @endsection

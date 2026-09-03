@@ -71,7 +71,9 @@ class CertificateController extends Controller
             abort(403, 'Hanya admin yang dapat mengakses fitur ini');
         }
 
-        $request->validate([
+        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+
+        $rules = [
             'certificate_template'        => 'required|string|in:template_1,template_2,template_3,template_4',
             'certificate_logo'            => 'nullable|array',
             'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
@@ -85,11 +87,31 @@ class CertificateController extends Controller
             'signature_name'              => 'nullable|array',
             'signature_position'          => 'nullable|array',
             'file_tambahan'               => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
-        ]);
+        ];
+
+        if ($isLomba) {
+            $rules = array_merge($rules, [
+                'certificate_template_tidak_lolos'        => 'nullable|string|in:template_1,template_2,template_3,template_4',
+                'certificate_logo_tidak_lolos'            => 'nullable|array',
+                'certificate_logo_tidak_lolos.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
+                'delete_logos_tidak_lolos'                => 'nullable|array',
+                'delete_logos_tidak_lolos.*'              => 'nullable|string',
+                'delete_signatures_tidak_lolos'           => 'nullable|array',
+                'delete_signatures_tidak_lolos.*'         => 'nullable|string',
+                'certificate_signature_file_tidak_lolos'  => 'nullable|array',
+                'certificate_signature_file_tidak_lolos.*'=> 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
+                'existing_signature_image_tidak_lolos'    => 'nullable|array',
+                'signature_name_tidak_lolos'              => 'nullable|array',
+                'signature_position_tidak_lolos'          => 'nullable|array',
+                'file_tambahan_tidak_lolos'               => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
+            ]);
+        }
+
+        $request->validate($rules);
 
         $data = ['certificate_template' => $request->certificate_template];
 
-        // Handle Logos (unchanged)
+        // Handle Logos (Lolos / Standard)
         $existingLogos = is_array($event->certificate_logo) ? $event->certificate_logo : ($event->certificate_logo ? [$event->certificate_logo] : []);
         if($request->has('delete_logos')) {
             foreach($request->delete_logos as $logo) {
@@ -106,7 +128,7 @@ class CertificateController extends Controller
         }
         $data['certificate_logo'] = array_values(array_unique($existingLogos));
 
-        // Handle Signatures (new format: array of {image, name, position})
+        // Handle Signatures (Lolos / Standard)
         $data['certificate_signature'] = $this->processSignatures($request, $event->certificate_signature);
 
         if ($request->has('delete_file_tambahan') && $request->delete_file_tambahan == '1') {
@@ -121,6 +143,54 @@ class CertificateController extends Controller
                 Storage::disk('public')->delete(str_replace('storage/', '', $event->file_tambahan));
             }
             $data['file_tambahan'] = $request->file('file_tambahan')->store('certificates', 'public');
+        }
+
+        // Handle Tidak Lolos for Lomba
+        if ($isLomba) {
+            $data['certificate_template_tidak_lolos'] = $request->input('certificate_template_tidak_lolos', 'template_1') ?: 'template_1';
+
+            // Logos Tidak Lolos
+            $existingLogosTL = is_array($event->certificate_logo_tidak_lolos) ? $event->certificate_logo_tidak_lolos : ($event->certificate_logo_tidak_lolos ? [$event->certificate_logo_tidak_lolos] : []);
+            if ($request->has('delete_logos_tidak_lolos')) {
+                foreach ($request->delete_logos_tidak_lolos as $logo) {
+                    if (!empty($logo)) {
+                        Storage::disk('public')->delete(str_replace('storage/', '', $logo));
+                        $existingLogosTL = array_values(array_filter($existingLogosTL, fn($l) => $l !== $logo));
+                    }
+                }
+            }
+            if ($request->hasFile('certificate_logo_tidak_lolos')) {
+                foreach ($request->file('certificate_logo_tidak_lolos') as $file) {
+                    $existingLogosTL[] = $file->store('certificates', 'public');
+                }
+            }
+            $data['certificate_logo_tidak_lolos'] = array_values(array_unique($existingLogosTL));
+
+            // Signatures Tidak Lolos
+            $data['certificate_signature_tidak_lolos'] = $this->processSignatures(
+                $request,
+                $event->certificate_signature_tidak_lolos,
+                'delete_signatures_tidak_lolos',
+                'existing_signature_image_tidak_lolos',
+                'signature_name_tidak_lolos',
+                'signature_position_tidak_lolos',
+                'certificate_signature_file_tidak_lolos'
+            );
+
+            // File Tambahan Tidak Lolos
+            if ($request->has('delete_file_tambahan_tidak_lolos') && $request->delete_file_tambahan_tidak_lolos == '1') {
+                if ($event->file_tambahan_tidak_lolos) {
+                    Storage::disk('public')->delete(str_replace('storage/', '', $event->file_tambahan_tidak_lolos));
+                    $data['file_tambahan_tidak_lolos'] = null;
+                }
+            }
+
+            if ($request->hasFile('file_tambahan_tidak_lolos')) {
+                if ($event->file_tambahan_tidak_lolos) {
+                    Storage::disk('public')->delete(str_replace('storage/', '', $event->file_tambahan_tidak_lolos));
+                }
+                $data['file_tambahan_tidak_lolos'] = $request->file('file_tambahan_tidak_lolos')->store('certificates', 'public');
+            }
         }
 
         $event->update($data);
@@ -193,7 +263,15 @@ class CertificateController extends Controller
      * Proses data tanda tangan dari form baru.
      * Mengembalikan array of {image, name, position}.
      */
-    private function processSignatures(Request $request, $existingRaw): array
+    private function processSignatures(
+        Request $request,
+        $existingRaw,
+        string $deleteField = 'delete_signatures',
+        string $existingImgField = 'existing_signature_image',
+        string $nameField = 'signature_name',
+        string $posField = 'signature_position',
+        string $fileField = 'certificate_signature_file'
+    ): array
     {
         // Normalisasi data lama
         $existingRaw = is_array($existingRaw) ? $existingRaw : ($existingRaw ? [$existingRaw] : []);
@@ -205,7 +283,7 @@ class CertificateController extends Controller
         }, $existingRaw);
 
         // Path gambar yang harus dihapus
-        $toDelete = array_filter((array) $request->input('delete_signatures', []));
+        $toDelete = array_filter((array) $request->input($deleteField, []));
         foreach ($toDelete as $delPath) {
             Storage::disk('public')->delete(str_replace('storage/', '', $delPath));
             $oldSigs = array_values(array_filter($oldSigs, fn($s) => ($s['image'] ?? '') !== $delPath));
@@ -218,10 +296,10 @@ class CertificateController extends Controller
         }
 
         $newSigs = [];
-        $existingImages = $request->input('existing_signature_image', []);
-        $sigNames       = $request->input('signature_name', []);
-        $sigPositions   = $request->input('signature_position', []);
-        $sigFiles       = $request->file('certificate_signature_file', []);
+        $existingImages = $request->input($existingImgField, []);
+        $sigNames       = $request->input($nameField, []);
+        $sigPositions   = $request->input($posField, []);
+        $sigFiles       = $request->file($fileField, []);
 
         // Semua index yang ada di form (dari existing + new)
         $allIndexes = array_unique(array_merge(
@@ -320,8 +398,14 @@ class CertificateController extends Controller
         
         $data = $this->getCertificateData($event, $registration->fresh());
         
+        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+        $isLolos = strtolower(trim($registration->submission_status ?? '')) === 'lolos';
+        $customTpl = ($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
+            ? $event->certificate_custom_template_tidak_lolos
+            : $event->certificate_custom_template;
+
         // Gunakan template custom jika tersedia, otherwise gunakan template bawaan
-        $viewName = !empty($event->certificate_custom_template)
+        $viewName = !empty($customTpl)
             ? 'events.certificate-custom'
             : 'events.certificate-pdf-only';
 
@@ -346,6 +430,8 @@ class CertificateController extends Controller
         $tempDir = storage_path('app/temp/certs_'.time());
         if(!is_dir($tempDir)) mkdir($tempDir, 0755, true);
 
+        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+
         foreach($registrations as $registration) {
             if (empty($registration->user)) {
                 continue; // Lewati registrasi jika data akun user relasi kosong/dihapus
@@ -358,7 +444,12 @@ class CertificateController extends Controller
             }
             $data = $this->getCertificateData($event, $registration->fresh());
             
-            $viewName = !empty($event->certificate_custom_template)
+            $isLolos = strtolower(trim($registration->submission_status ?? '')) === 'lolos';
+            $customTpl = ($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
+                ? $event->certificate_custom_template_tidak_lolos
+                : $event->certificate_custom_template;
+
+            $viewName = !empty($customTpl)
                 ? 'events.certificate-custom'
                 : 'events.certificate-pdf-only';
             $html = trim(view($viewName, $data)->render());
@@ -541,9 +632,23 @@ class CertificateController extends Controller
 
     private function getCertificateData(Event $event, EventRegistration $registration)
     {
+        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+        $isLolos = strtolower(trim($registration->submission_status ?? '')) === 'lolos';
+
+        // Tentukan template aktif
+        $template = $event->certificate_template ?? 'template_1';
+        if ($isLomba && !$isLolos) {
+            $template = $event->certificate_template_tidak_lolos ?: $template;
+        }
+
+        // Tentukan logo aktif
+        $logoField = ($isLomba && !$isLolos && !empty($event->certificate_logo_tidak_lolos))
+            ? $event->certificate_logo_tidak_lolos
+            : $event->certificate_logo;
+
         $logosBase64 = [];
         $logosUrl = [];
-        foreach(is_array($event->certificate_logo) ? $event->certificate_logo : [] as $l) {
+        foreach(is_array($logoField) ? $logoField : [] as $l) {
             $path = str_replace('storage/', '', $l);
             if(Storage::disk('public')->exists($path)) {
                 $mime = Storage::disk('public')->mimeType($path);
@@ -553,7 +658,12 @@ class CertificateController extends Controller
             }
         }
 
-        $sigsRaw = is_array($event->certificate_signature) ? $event->certificate_signature : [];
+        // Tentukan signatures aktif
+        $sigsRaw = ($isLomba && !$isLolos && !empty($event->certificate_signature_tidak_lolos))
+            ? $event->certificate_signature_tidak_lolos
+            : $event->certificate_signature;
+        $sigsRaw = is_array($sigsRaw) ? $sigsRaw : [];
+
         $signaturesData = [];
         $signaturesBase64 = []; // backward compat
         foreach ($sigsRaw as $s) {
@@ -577,9 +687,14 @@ class CertificateController extends Controller
             }
         }
 
+        // Tentukan file tambahan aktif
+        $fileTambahanRaw = ($isLomba && !$isLolos && !empty($event->file_tambahan_tidak_lolos))
+            ? $event->file_tambahan_tidak_lolos
+            : $event->file_tambahan;
+
         $fileTambahanBase64 = null;
-        if ($event->file_tambahan) {
-            $path = str_replace('storage/', '', $event->file_tambahan);
+        if ($fileTambahanRaw) {
+            $path = str_replace('storage/', '', $fileTambahanRaw);
             if(Storage::disk('public')->exists($path)) {
                 $mime = Storage::disk('public')->mimeType($path);
                 $content = base64_encode(Storage::disk('public')->get($path));
@@ -590,6 +705,9 @@ class CertificateController extends Controller
         return [
             'event'            => $event,
             'user'             => $registration->user,
+            'template'         => $template,
+            'isLomba'          => $isLomba,
+            'isLolos'          => $isLolos,
             'issuedAt'         => $registration->certificate_issued_at ?? now(),
             'certificateNumber'=> $registration->certificate_number,
             'fileTambahanBase64'=> $fileTambahanBase64,
@@ -657,7 +775,7 @@ class CertificateController extends Controller
         return $enrollment->isFullyCompleted();
     }
 
-    public function isCertificateReady(Event $event, EventRegistration $registration = null) {
+    public function isCertificateReady(Event $event, ?EventRegistration $registration = null) {
         if ($registration && $registration->certificate_issued_at) return true;
 
         if ($registration && !empty($registration->has_link_feedback)) return true;
@@ -739,12 +857,25 @@ class CertificateController extends Controller
     /**
      * Show the visual template builder for an Event certificate.
      */
-    public function templateBuilder(Event $event)
+    public function templateBuilder(Request $request, Event $event)
     {
         if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
 
+        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+        $type = ($isLomba && $request->query('type') === 'tidak_lolos') ? 'tidak_lolos' : 'lolos';
+
+        $rawLogos = ($type === 'tidak_lolos')
+            ? ($event->certificate_logo_tidak_lolos ?: $event->certificate_logo)
+            : $event->certificate_logo;
+        $rawSigs = ($type === 'tidak_lolos')
+            ? ($event->certificate_signature_tidak_lolos ?: $event->certificate_signature)
+            : $event->certificate_signature;
+        $customTemplate = ($type === 'tidak_lolos')
+            ? $event->certificate_custom_template_tidak_lolos
+            : $event->certificate_custom_template;
+
         $existingLogos = [];
-        foreach (is_array($event->certificate_logo) ? $event->certificate_logo : [] as $l) {
+        foreach (is_array($rawLogos) ? $rawLogos : [] as $l) {
             $path = str_replace('storage/', '', $l);
             if (Storage::disk('public')->exists($path)) {
                 $mime    = Storage::disk('public')->mimeType($path);
@@ -757,7 +888,7 @@ class CertificateController extends Controller
         }
 
         $existingSigs = [];
-        foreach (is_array($event->certificate_signature) ? $event->certificate_signature : [] as $s) {
+        foreach (is_array($rawSigs) ? $rawSigs : [] as $s) {
             $imgPath = is_array($s) ? ($s['image'] ?? '') : $s;
             $sigName = is_array($s) ? ($s['name'] ?? '') : '';
             $sigPos  = is_array($s) ? ($s['position'] ?? '') : '';
@@ -769,9 +900,7 @@ class CertificateController extends Controller
             }
         }
 
-        $customTemplate = $event->certificate_custom_template;
-
-        return view('admin.certificates.template_builder', compact('event', 'existingLogos', 'existingSigs', 'customTemplate'));
+        return view('admin.certificates.template_builder', compact('event', 'existingLogos', 'existingSigs', 'customTemplate', 'type'));
     }
 
     /**
@@ -783,6 +912,7 @@ class CertificateController extends Controller
 
         $validated = $request->validate([
             'template_json' => 'required|string',
+            'type'          => 'nullable|string|in:lolos,tidak_lolos',
         ]);
 
         $templateData = json_decode($validated['template_json'], true);
@@ -790,7 +920,9 @@ class CertificateController extends Controller
             return response()->json(['error' => 'JSON tidak valid'], 422);
         }
 
-        $event->update(['certificate_custom_template' => $templateData]);
+        $type = $request->input('type', 'lolos');
+        $field = ($type === 'tidak_lolos') ? 'certificate_custom_template_tidak_lolos' : 'certificate_custom_template';
+        $event->update([$field => $templateData]);
 
         if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
             return response()->json(['success' => true, 'message' => 'Template berhasil disimpan!']);
@@ -803,10 +935,12 @@ class CertificateController extends Controller
     /**
      * Reset (delete) the custom template for an Event.
      */
-    public function resetCustomTemplate(Event $event)
+    public function resetCustomTemplate(Request $request, Event $event)
     {
         if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
-        $event->update(['certificate_custom_template' => null]);
+        $type = $request->input('type', 'lolos');
+        $field = ($type === 'tidak_lolos') ? 'certificate_custom_template_tidak_lolos' : 'certificate_custom_template';
+        $event->update([$field => null]);
         return redirect()->route('admin.crm.certificates.edit', $event)
             ->with('success', 'Template custom telah dihapus. Sistem akan menggunakan template bawaan.');
     }

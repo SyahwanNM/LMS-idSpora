@@ -342,7 +342,7 @@
                                                         <th style="width:140px;">Phone</th>
                                                         <th style="width:120px;">Status</th>
                                                         @if($event->jenis === 'Lomba')
-<th style="width:250px;">Lomba Submission</th>
+                                                        <th style="width:250px;">Lomba Submission</th>
                                                         @endif
                                                         <th style="width:160px;">Registered</th>
                                                         <th style="width:160px;">Actions</th>

@@ -221,7 +221,14 @@
             <i class="bi bi-arrow-left me-1"></i> Kembali
         </a>
         <div>
-            <h5 class="fw-800 text-dark mb-0">Visual Certificate Builder</h5>
+            <div class="d-flex align-items-center gap-2">
+                <h5 class="fw-800 text-dark mb-0">Visual Certificate Builder</h5>
+                @if(isset($type) && $type === 'tidak_lolos')
+                    <span class="badge bg-secondary text-uppercase fw-bold" style="font-size: 0.65rem;">Peserta Tidak Lolos</span>
+                @elseif(isset($type) && $type === 'lolos' && strtolower(trim($event->jenis ?? '')) === 'lomba')
+                    <span class="badge bg-success text-uppercase fw-bold" style="font-size: 0.65rem;">Peserta Lolos</span>
+                @endif
+            </div>
             <small class="text-muted">{{ $event ? 'Event: ' . $event->title : 'Course: ' . $course->name }}</small>
         </div>
     </div>
@@ -534,6 +541,9 @@
 <form id="save-template-form" action="{{ $event ? route('admin.crm.certificates.save-custom-template', $event) : route('admin.crm.certificates.save-custom-template-course', $course) }}" method="POST" style="display:none;">
     @csrf
     <input type="hidden" name="template_json" id="template_json_field">
+    @if(isset($type))
+    <input type="hidden" name="type" value="{{ $type }}">
+    @endif
 </form>
 @endsection
 
