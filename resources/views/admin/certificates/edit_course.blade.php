@@ -460,7 +460,32 @@
                     <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Pilih Template Desain</h6>
                 </div>
                 
-                <div class="row g-3">
+                <div class="row g-3 template-card-container">
+                    @if(!empty($course->certificate_custom_template))
+                    <div class="col-12">
+                        <div class="template-card active" id="card-custom-course" onclick="selectCustomTemplate()" style="border-color: #10b981; background: #f0fdf4;">
+                            <div class="check-icon" style="background: #10b981; display: flex;"><i class="bi bi-check"></i></div>
+                            <div class="d-flex align-items-center p-3 gap-3">
+                                <div style="width:46px; height:46px; border-radius:12px; background:#10b981; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
+                                    <i class="bi bi-magic"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="font-weight:800; font-size:0.88rem; color:#065f46;">Template Custom Builder (Aktif)</div>
+                                        <span class="badge bg-success" style="font-size:0.65rem;">Sedang Digunakan</span>
+                                    </div>
+                                    <div style="font-size:0.72rem; color:#047857; margin-top:2px;">Template sertifikat visual hasil rancangan dari Visual Builder.</div>
+                                </div>
+                                <div>
+                                    <a href="{{ route('admin.crm.certificates.template-builder-course', $course) }}" class="btn btn-sm btn-success fw-bold px-3" style="font-size:0.75rem; border-radius:8px;">
+                                        <i class="bi bi-pencil-square me-1"></i> Edit Builder
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     @php $tpls = [
                         ['id'=>'template_1','name'=>'Classic Royal','desc'=>'Elegan dengan aksen emas dan navy.','bg'=>'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)','icon'=>'bi-award'],
                         ['id'=>'template_2','name'=>'Modern Minimal','desc'=>'Bersih, fokus pada tipografi modern.','bg'=>'#f1f5f9','icon'=>'bi-file-earmark-text','color'=>'#1e293b'],
@@ -468,8 +493,8 @@
                         ['id'=>'template_4','name'=>'Blue Shield','desc'=>'Biru navy elegan dengan aksen emas.','bg'=>'linear-gradient(155deg, #001060 0%, #0033cc 60%, #0050ff 100%)','icon'=>'bi-shield-fill-check']
                     ]; @endphp
                     @foreach($tpls as $t)
-                    <div class="col-md-4">
-                        <div class="template-card {{ ($course->certificate_template ?? 'template_1') == $t['id'] ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this)">
+                    <div class="col-md-6">
+                        <div class="template-card {{ (empty($course->certificate_custom_template) && ($course->certificate_template ?? 'template_1') == $t['id']) ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this)">
                             <div class="check-icon"><i class="bi bi-check"></i></div>
                             <div class="template-preview" style="background:{{ $t['bg'] }}; color:{{ $t['color'] ?? '#fff' }};">
                                 <i class="bi {{ $t['icon'] }}"></i>
@@ -610,9 +635,23 @@
         <div class="col-lg-6">
             <!-- Certificate Live Preview Card -->
             <div class="card-minimal p-4 mb-4 sticky-top shadow-sm" style="top: 20px; z-index: 10; background: #fff; border: 1px solid var(--crm-border-soft); border-radius: 16px;">
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;"><i class="bi bi-eye-fill"></i></div>
-                    <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Live Preview Sertifikat</h6>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;"><i class="bi bi-eye-fill"></i></div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Live Preview Sertifikat</h6>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" id="badge-custom-active" style="display:none; font-size:0.65rem;">
+                            <i class="bi bi-magic me-1"></i>Custom Builder
+                        </span>
+                    </div>
+                    
+                    <div class="btn-group btn-group-sm" id="preview-mode-switch" style="display: none;">
+                        <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 active fw-bold" id="btn-mode-custom" style="font-size:0.7rem;" onclick="setPreviewMode('custom')">
+                            <i class="bi bi-magic me-1"></i>Custom
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 fw-bold" id="btn-mode-standard" style="font-size:0.7rem;" onclick="setPreviewMode('standard')">
+                            <i class="bi bi-layout-text-window-reverse me-1"></i>Standar
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Scaling Container -->
@@ -760,6 +799,11 @@
                                 <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: 009</div>
                             </div>
 
+                            <!-- The dynamic certificate preview page for Custom Builder template -->
+                            <div id="preview-custom-page" style="display: none; position: absolute; top: 0; left: 0; width: 1000px; height: 706px; overflow: hidden; background: #ffffff;">
+                                <!-- Dynamically rendered by renderCustomPreview() -->
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -791,16 +835,40 @@
 
 @section('scripts')
 <script>
+    // Custom template from backend
+    const customTemplate = @json($course->certificate_custom_template);
+
+    // Active preview mode: 'custom' (if exists) or 'standard'
+    let previewMode = (customTemplate && customTemplate.elements && customTemplate.elements.length > 0) ? 'custom' : 'standard';
+
     // Global data stores for preview assets
     const uploadedFiles = {
         logos: {},
         signatures: {}
     };
 
+    function selectCustomTemplate() {
+        document.querySelectorAll('.template-card-container .template-card').forEach(el => el.classList.remove('active'));
+        const customCard = document.getElementById('card-custom-course');
+        if (customCard) customCard.classList.add('active');
+
+        previewMode = 'custom';
+        renderPreview();
+    }
+
+    function setPreviewMode(mode) {
+        previewMode = mode;
+        renderPreview();
+    }
+
     function selectTemplate(id, element) {
-        document.querySelectorAll('.template-card').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.template-card-container .template-card').forEach(el => el.classList.remove('active'));
         element.classList.add('active');
+        const customCard = document.getElementById('card-custom-course');
+        if (customCard) customCard.classList.remove('active');
+
         document.getElementById('selected_template').value = id;
+        previewMode = 'standard';
         renderPreview();
     }
 
@@ -966,8 +1034,144 @@
         }
     }
 
-    // Interactive Preview Engine
+    function resolveAssetUrl(src, base64) {
+        if (base64 && base64.length > 0) return base64;
+        if (!src) return '';
+        if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
+        const clean = src.replace(/^storage\//, '');
+        return "{{ asset('storage') }}/" + clean;
+    }
+
+    function replaceTemplateVariables(text) {
+        if (!text) return '';
+        const demoName = 'Nama Peserta Demo';
+        const courseTitle = @json($course->name ?? 'Judul Kursus');
+        const dateStr = @json(now()->format('d F Y'));
+        const certNo = '009';
+
+        return text
+            .replace(/\{\{nama\}\}/g, demoName)
+            .replace(/\{\{event\}\}/g, courseTitle)
+            .replace(/\{\{course\}\}/g, courseTitle)
+            .replace(/\{\{tanggal\}\}/g, dateStr)
+            .replace(/\{\{nomor_sertifikat\}\}/g, certNo);
+    }
+
+    function renderCustomPreview(templateData) {
+        const container = document.getElementById('preview-custom-page');
+        if (!container || !templateData) return;
+
+        container.innerHTML = '';
+
+        // Background
+        const bg = templateData.background || {};
+        if (bg.gradient) {
+            container.style.background = bg.gradient;
+        } else {
+            container.style.background = bg.color || '#ffffff';
+        }
+
+        // Pattern / Frame image if any
+        if (bg.image) {
+            const bgImg = document.createElement('img');
+            bgImg.src = bg.image;
+            bgImg.style.cssText = 'position:absolute; left:0; top:0; width:100%; height:100%; z-index:1; pointer-events:none; display:block;';
+            container.appendChild(bgImg);
+        }
+
+        // Elements
+        const elements = templateData.elements || [];
+        elements.forEach(el => {
+            const div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.left = (el.x || 0) + 'px';
+            div.style.top = (el.y || 0) + 'px';
+            div.style.zIndex = el.zIndex || 1;
+            div.style.boxSizing = 'border-box';
+
+            if (el.width) div.style.width = el.width + 'px';
+            if (el.height) div.style.height = el.height + 'px';
+
+            if (el.type === 'text' || el.type === 'variable') {
+                div.style.fontFamily = (el.fontFamily || 'Helvetica') + ', sans-serif';
+                div.style.fontSize = (el.fontSize || 14) + 'px';
+                div.style.color = el.color || '#1e293b';
+                div.style.textAlign = el.align || 'left';
+                div.style.fontWeight = el.bold ? 'bold' : 'normal';
+                div.style.fontStyle = el.italic ? 'italic' : 'normal';
+                div.style.textDecoration = el.underline ? 'underline' : 'none';
+                div.style.whiteSpace = 'pre-wrap';
+                div.style.lineHeight = '1.2';
+                div.innerHTML = replaceTemplateVariables(el.content || '');
+            }
+            else if (el.type === 'logo' || el.type === 'shape') {
+                const imgUrl = resolveAssetUrl(el.src, el.base64);
+                div.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; display:block; pointer-events:none;">`;
+            }
+            else if (el.type === 'signature') {
+                const sigUrl = resolveAssetUrl(el.src, el.base64);
+                let imgHtml = '<div style="height:55px;"></div>';
+                if (sigUrl) {
+                    imgHtml = `<img src="${sigUrl}" style="height:55px; width:auto; display:block; margin:0 auto 2px; object-fit:contain; pointer-events:none;">`;
+                }
+                div.style.fontFamily = 'Helvetica, sans-serif';
+                div.style.textAlign = 'center';
+                div.innerHTML = `
+                    ${imgHtml}
+                    <div style="width:90%; border-bottom:1.5px solid #000; margin:2px auto;"></div>
+                    <div style="font-size:11px; font-weight:bold; color:#0f172a; margin-top:2px;">${el.name || 'Authorized Signee'}</div>
+                    <div style="font-size:9px; color:#64748b; font-style:italic;">${el.position || 'Authorized Position'}</div>
+                `;
+            }
+            else if (el.type === 'box') {
+                div.style.background = el.bgColor || 'transparent';
+                div.style.border = `${el.borderWidth || 0}px ${el.borderStyle || 'solid'} ${el.borderColor || '#000'}`;
+                div.style.borderRadius = `${el.borderRadius || 0}px`;
+            }
+
+            container.appendChild(div);
+        });
+    }
+
+    // Main Interactive Preview Engine
     function renderPreview() {
+        const hasCustom = customTemplate && customTemplate.elements && customTemplate.elements.length > 0;
+        const isCustom = hasCustom && (previewMode === 'custom');
+
+        // Mode switch buttons & custom badge in preview header
+        const modeSwitch = document.getElementById('preview-mode-switch');
+        const badgeCustom = document.getElementById('badge-custom-active');
+        if (modeSwitch) {
+            modeSwitch.style.display = hasCustom ? 'inline-flex' : 'none';
+        }
+        if (badgeCustom) {
+            badgeCustom.style.display = isCustom ? 'inline-flex' : 'none';
+        }
+        const btnCustom = document.getElementById('btn-mode-custom');
+        const btnStandard = document.getElementById('btn-mode-standard');
+        if (btnCustom && btnStandard) {
+            btnCustom.classList.toggle('active', isCustom);
+            btnStandard.classList.toggle('active', !isCustom);
+        }
+
+        const standardPage = document.getElementById('preview-cert-page');
+        const customPage = document.getElementById('preview-custom-page');
+
+        if (isCustom) {
+            if (standardPage) standardPage.style.display = 'none';
+            if (customPage) customPage.style.display = 'block';
+            renderCustomPreview(customTemplate);
+        } else {
+            if (customPage) customPage.style.display = 'none';
+            if (standardPage) standardPage.style.display = 'block';
+            renderStandardPreview();
+        }
+
+        scalePreview();
+    }
+
+    // Standard Template Preview Engine
+    function renderStandardPreview() {
         const template = document.getElementById('selected_template').value;
         const page = document.getElementById('preview-cert-page');
         if (!page) return;
@@ -1056,122 +1260,6 @@
 
         // Render Signatures
         renderSignatures();
-        
-        // Trigger scaling calculations
-        scalePreview();
-    }
-
-    function renderLogosInContainer(containerSelector, mainLogoUrl, mainLogoId, template) {
-        const container = document.querySelector(containerSelector);
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        // Main logo
-        const mainImg = document.createElement('img');
-        if (template === 'template_4') {
-            mainImg.src = "{{ asset('aset/logo poster.png') }}";
-            mainImg.className = 'logo-poster-img';
-        } else {
-            mainImg.src = mainLogoUrl;
-            mainImg.className = 'logo-item';
-            mainImg.id = mainLogoId;
-        }
-        container.appendChild(mainImg);
-
-        // Render existing logos
-        const existingLogos = document.querySelectorAll('#existingLogos .asset-item');
-        existingLogos.forEach(item => {
-            const deleteInput = item.querySelector('.delete-logo-input');
-            if (deleteInput && deleteInput.value === '') { // Not marked deleted
-                const img = item.querySelector('img');
-                if (img) {
-                    const newImg = document.createElement('img');
-                    newImg.src = img.src;
-                    newImg.className = (template === 'template_4') ? 'logo-item-top' : 'logo-item';
-                    container.appendChild(newImg);
-                }
-            }
-        });
-
-        // Render uploaded logos from store
-        Object.keys(uploadedFiles.logos).forEach(key => {
-            if (uploadedFiles.logos[key]) {
-                const newImg = document.createElement('img');
-                newImg.src = uploadedFiles.logos[key];
-                newImg.className = (template === 'template_4') ? 'logo-item-top' : 'logo-item';
-                container.appendChild(newImg);
-            }
-        });
-    }
-
-    function renderSignatures() {
-        const container = document.getElementById('preview-signatures-container');
-        if (!container) return;
-        container.innerHTML = '';
-
-        const template = document.getElementById('selected_template').value;
-
-        const entries = document.querySelectorAll('#signaturesContainer .sig-entry');
-        entries.forEach((entry, index) => {
-            // Skip if marked deleted
-            const deleteInput = entry.querySelector('.delete-sig-input');
-            if (deleteInput && deleteInput.value !== '') {
-                return;
-            }
-
-            const nameInput = entry.querySelector('.sig-name-input');
-            if (!nameInput) return;
-            const match = nameInput.name.match(/\[(\d+)\]/);
-            const idx = match ? match[1] : 'dyn_' + index;
-
-            const posInput = entry.querySelector('.sig-pos-input');
-            const nameValue = nameInput.value.trim();
-            const posValue = posInput ? posInput.value.trim() : '';
-
-            // Get image source
-            let imgSrc = '';
-            const replaceCheckbox = entry.querySelector('.sig-replace-checkbox');
-            const isReplaced = replaceCheckbox ? replaceCheckbox.checked : false;
-            
-            const existingInput = entry.querySelector('.existing-sig-path');
-            const existingPath = existingInput ? existingInput.value : '';
-
-            if (existingPath && !isReplaced) {
-                imgSrc = "{{ asset('uploads') }}/" + existingPath;
-            } else if (uploadedFiles.signatures[idx]) {
-                imgSrc = uploadedFiles.signatures[idx];
-            }
-
-            const sigBox = document.createElement('div');
-            sigBox.className = 'sig-box';
-
-            if (template === 'template_4') {
-                let imgHtml = '<div class="sig-image-wrap"></div>';
-                if (imgSrc) {
-                    imgHtml = `<div class="sig-image-wrap"><img src="${imgSrc}" class="sig-img"></div>`;
-                }
-                sigBox.innerHTML = `
-                    <p class="sig-position">${posValue || 'Authorized Position'}</p>
-                    ${imgHtml}
-                    <div class="sig-line"></div>
-                    <p class="sig-name">${nameValue || 'Authorized Signature'}</p>
-                `;
-            } else {
-                let imgHtml = '<div style="height: 50px;"></div>';
-                if (imgSrc) {
-                    imgHtml = `<img src="${imgSrc}" style="height: 50px; width: auto; display: block; margin: 0 auto; object-fit: contain;">`;
-                }
-                sigBox.innerHTML = `
-                    ${imgHtml}
-                    <div class="sig-line"></div>
-                    <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">${nameValue || 'Authorized Signature'}</p>
-                    <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">${posValue || 'Authorized Position'}</p>
-                `;
-            }
-
-            container.appendChild(sigBox);
-        });
     }
 
     function scalePreview() {
@@ -1179,13 +1267,23 @@
         if (!scaler) return;
         const container = document.getElementById('certificate-preview-container');
         if (!container) return;
-        
+        const aspect = document.getElementById('cert-preview-aspect');
+
+        const hasCustom = customTemplate && customTemplate.elements && customTemplate.elements.length > 0;
+        const isCustom = hasCustom && (previewMode === 'custom');
+
         const containerW = container.offsetWidth;
-        const certNaturalW = 1020;
+        const certNaturalW = isCustom ? 1000 : 1020;
+        const certNaturalH = isCustom ? 706 : 642;
         const scale = containerW / certNaturalW;
-        
+
+        scaler.style.width = certNaturalW + 'px';
+        scaler.style.height = certNaturalH + 'px';
         scaler.style.transform = 'scale(' + scale + ')';
-        container.style.height = (scale * 642) + 'px';
+        container.style.height = (scale * certNaturalH) + 'px';
+        if (aspect) {
+            aspect.style.paddingTop = isCustom ? '70.6%' : '62.96%';
+        }
     }
 
     // Initialize Page

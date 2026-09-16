@@ -547,9 +547,34 @@
                     </div>
                     
                     <div class="row g-3 template-card-container">
+                        @if(!empty($event->certificate_custom_template))
+                        <div class="col-12">
+                            <div class="template-card template-card-lolos active" id="card-custom-lolos" onclick="selectCustomTemplate('lolos')" style="border-color: #10b981; background: #f0fdf4;">
+                                <div class="check-icon" style="background: #10b981; display: flex;"><i class="bi bi-check"></i></div>
+                                <div class="d-flex align-items-center p-3 gap-3">
+                                    <div style="width:46px; height:46px; border-radius:12px; background:#10b981; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
+                                        <i class="bi bi-magic"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="font-weight:800; font-size:0.88rem; color:#065f46;">Template Custom Builder (Aktif)</div>
+                                            <span class="badge bg-success" style="font-size:0.65rem;">Sedang Digunakan</span>
+                                        </div>
+                                        <div style="font-size:0.72rem; color:#047857; margin-top:2px;">Template sertifikat visual hasil rancangan dari Visual Builder.</div>
+                                    </div>
+                                    <div>
+                                        <a href="{{ route('admin.crm.certificates.template-builder', ['event' => $event, 'type' => 'lolos']) }}" class="btn btn-sm btn-success fw-bold px-3" style="font-size:0.75rem; border-radius:8px;">
+                                            <i class="bi bi-pencil-square me-1"></i> Edit Builder
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         @foreach($tpls as $t)
                         <div class="col-md-6">
-                            <div class="template-card template-card-lolos {{ ($event->certificate_template ?? 'template_1') == $t['id'] ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this, 'lolos')">
+                            <div class="template-card template-card-lolos {{ (empty($event->certificate_custom_template) && ($event->certificate_template ?? 'template_1') == $t['id']) ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this, 'lolos')">
                                 <div class="check-icon"><i class="bi bi-check"></i></div>
                                 <div class="template-preview" style="background:{{ $t['bg'] }}; color:{{ $t['color'] ?? '#fff' }};">
                                     <i class="bi {{ $t['icon'] }}"></i>
@@ -715,9 +740,34 @@
                     </div>
                     
                     <div class="row g-3 template-card-container">
+                        @if(!empty($event->certificate_custom_template_tidak_lolos))
+                        <div class="col-12">
+                            <div class="template-card template-card-tidak-lolos active" id="card-custom-tidak-lolos" onclick="selectCustomTemplate('tidak_lolos')" style="border-color: #10b981; background: #f0fdf4;">
+                                <div class="check-icon" style="background: #10b981; display: flex;"><i class="bi bi-check"></i></div>
+                                <div class="d-flex align-items-center p-3 gap-3">
+                                    <div style="width:46px; height:46px; border-radius:12px; background:#10b981; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
+                                        <i class="bi bi-magic"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="font-weight:800; font-size:0.88rem; color:#065f46;">Template Custom Builder Tidak Lolos (Aktif)</div>
+                                            <span class="badge bg-success" style="font-size:0.65rem;">Sedang Digunakan</span>
+                                        </div>
+                                        <div style="font-size:0.72rem; color:#047857; margin-top:2px;">Template sertifikat visual hasil rancangan dari Visual Builder.</div>
+                                    </div>
+                                    <div>
+                                        <a href="{{ route('admin.crm.certificates.template-builder', ['event' => $event, 'type' => 'tidak_lolos']) }}" class="btn btn-sm btn-success fw-bold px-3" style="font-size:0.75rem; border-radius:8px;">
+                                            <i class="bi bi-pencil-square me-1"></i> Edit Builder
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         @foreach($tpls as $t)
                         <div class="col-md-6">
-                            <div class="template-card template-card-tidak-lolos {{ ($event->certificate_template_tidak_lolos ?? 'template_1') == $t['id'] ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this, 'tidak_lolos')">
+                            <div class="template-card template-card-tidak-lolos {{ (empty($event->certificate_custom_template_tidak_lolos) && ($event->certificate_template_tidak_lolos ?? 'template_1') == $t['id']) ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this, 'tidak_lolos')">
                                 <div class="check-icon"><i class="bi bi-check"></i></div>
                                 <div class="template-preview" style="background:{{ $t['bg'] }}; color:{{ $t['color'] ?? '#fff' }};">
                                     <i class="bi {{ $t['icon'] }}"></i>
@@ -883,19 +933,34 @@
                     <div class="d-flex align-items-center gap-2">
                         <div style="width:24px;height:24px;border-radius:6px;background:var(--crm-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;"><i class="bi bi-eye-fill"></i></div>
                         <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Live Preview Sertifikat</h6>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" id="badge-custom-active" style="display:none; font-size:0.65rem;">
+                            <i class="bi bi-magic me-1"></i>Custom Builder
+                        </span>
                     </div>
                     
-                    @if($isLomba)
-                    <!-- Preview Switcher -->
-                    <div class="d-flex gap-1">
-                        <button type="button" class="preview-switcher-btn active" data-section="lolos" onclick="switchSection('lolos')">
-                            <i class="bi bi-trophy-fill text-success me-1"></i>Lolos
-                        </button>
-                        <button type="button" class="preview-switcher-btn" data-section="tidak_lolos" onclick="switchSection('tidak_lolos')">
-                            <i class="bi bi-award text-secondary me-1"></i>Tidak Lolos
-                        </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Mode Switcher: Custom vs Standar (visible when custom template exists) -->
+                        <div class="btn-group btn-group-sm" id="preview-mode-switch" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 active fw-bold" id="btn-mode-custom" style="font-size:0.7rem;" onclick="setPreviewMode('custom')">
+                                <i class="bi bi-magic me-1"></i>Custom
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 fw-bold" id="btn-mode-standard" style="font-size:0.7rem;" onclick="setPreviewMode('standard')">
+                                <i class="bi bi-layout-text-window-reverse me-1"></i>Standar
+                            </button>
+                        </div>
+
+                        @if($isLomba)
+                        <!-- Preview Switcher -->
+                        <div class="d-flex gap-1">
+                            <button type="button" class="preview-switcher-btn active" data-section="lolos" onclick="switchSection('lolos')">
+                                <i class="bi bi-trophy-fill text-success me-1"></i>Lolos
+                            </button>
+                            <button type="button" class="preview-switcher-btn" data-section="tidak_lolos" onclick="switchSection('tidak_lolos')">
+                                <i class="bi bi-award text-secondary me-1"></i>Tidak Lolos
+                            </button>
+                        </div>
+                        @endif
                     </div>
-                    @endif
                 </div>
                 
                 <!-- Scaling Container -->
@@ -1038,6 +1103,11 @@
                                 <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: 009</div>
                             </div>
 
+                            <!-- The dynamic certificate preview page for Custom Builder template -->
+                            <div id="preview-custom-page" style="display: none; position: absolute; top: 0; left: 0; width: 1000px; height: 706px; overflow: hidden; background: #ffffff;">
+                                <!-- Dynamically rendered by renderCustomPreview() -->
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -1086,6 +1156,18 @@
     const isLomba = {{ $isLomba ? 'true' : 'false' }};
     let currentSection = 'lolos'; // 'lolos' or 'tidak_lolos'
 
+    // Custom templates from backend
+    const customTemplates = {
+        lolos: @json($event->certificate_custom_template),
+        tidak_lolos: @json($event->certificate_custom_template_tidak_lolos)
+    };
+
+    // Active preview mode for each section: 'custom' (if exists) or 'standard'
+    let previewMode = {
+        lolos: (customTemplates.lolos && customTemplates.lolos.elements && customTemplates.lolos.elements.length > 0) ? 'custom' : 'standard',
+        tidak_lolos: (customTemplates.tidak_lolos && customTemplates.tidak_lolos.elements && customTemplates.tidak_lolos.elements.length > 0) ? 'custom' : 'standard'
+    };
+
     // Global data stores for preview assets
     const uploadedFiles = {
         lolos: { logos: {}, signatures: {} },
@@ -1122,6 +1204,27 @@
         renderPreview();
     }
 
+    function selectCustomTemplate(section = 'lolos') {
+        const pane = (section === 'tidak_lolos') ? document.getElementById('pane-tidak-lolos') : document.getElementById('pane-lolos');
+        if (pane) {
+            pane.querySelectorAll('.template-card-container .template-card').forEach(el => el.classList.remove('active'));
+        }
+        const customCard = document.getElementById(section === 'tidak_lolos' ? 'card-custom-tidak-lolos' : 'card-custom-lolos');
+        if (customCard) customCard.classList.add('active');
+
+        previewMode[section] = 'custom';
+        if (currentSection !== section) {
+            switchSection(section);
+        } else {
+            renderPreview();
+        }
+    }
+
+    function setPreviewMode(mode) {
+        previewMode[currentSection] = mode;
+        renderPreview();
+    }
+
     function selectTemplate(id, element, section = 'lolos') {
         const parentContainer = element.closest('.template-card-container');
         if (parentContainer) {
@@ -1129,9 +1232,16 @@
         }
         element.classList.add('active');
 
+        // Uncheck custom card if exists
+        const customCard = document.getElementById(section === 'tidak_lolos' ? 'card-custom-tidak-lolos' : 'card-custom-lolos');
+        if (customCard) customCard.classList.remove('active');
+
         const inputId = (section === 'tidak_lolos') ? 'selected_template_tidak_lolos' : 'selected_template_lolos';
         const input = document.getElementById(inputId);
         if (input) input.value = id;
+
+        // Switch preview mode to standard for this section
+        previewMode[section] = 'standard';
 
         if (currentSection !== section) {
             switchSection(section);
@@ -1326,8 +1436,145 @@
         }
     }
 
-    // Interactive Preview Engine
+    function resolveAssetUrl(src, base64) {
+        if (base64 && base64.length > 0) return base64;
+        if (!src) return '';
+        if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
+        const clean = src.replace(/^storage\//, '');
+        return "{{ asset('storage') }}/" + clean;
+    }
+
+    function replaceTemplateVariables(text) {
+        if (!text) return '';
+        const demoName = 'Nama Peserta Demo';
+        const eventTitle = @json($event->title ?? 'Judul Event');
+        const dateStr = @json($event->event_date ? $event->event_date->format('d F Y') : now()->format('d F Y'));
+        const certNo = '009';
+
+        return text
+            .replace(/\{\{nama\}\}/g, demoName)
+            .replace(/\{\{event\}\}/g, eventTitle)
+            .replace(/\{\{course\}\}/g, eventTitle)
+            .replace(/\{\{tanggal\}\}/g, dateStr)
+            .replace(/\{\{nomor_sertifikat\}\}/g, certNo);
+    }
+
+    function renderCustomPreview(templateData) {
+        const container = document.getElementById('preview-custom-page');
+        if (!container || !templateData) return;
+
+        container.innerHTML = '';
+
+        // Background
+        const bg = templateData.background || {};
+        if (bg.gradient) {
+            container.style.background = bg.gradient;
+        } else {
+            container.style.background = bg.color || '#ffffff';
+        }
+
+        // Pattern / Frame image if any
+        if (bg.image) {
+            const bgImg = document.createElement('img');
+            bgImg.src = bg.image;
+            bgImg.style.cssText = 'position:absolute; left:0; top:0; width:100%; height:100%; z-index:1; pointer-events:none; display:block;';
+            container.appendChild(bgImg);
+        }
+
+        // Elements
+        const elements = templateData.elements || [];
+        elements.forEach(el => {
+            const div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.left = (el.x || 0) + 'px';
+            div.style.top = (el.y || 0) + 'px';
+            div.style.zIndex = el.zIndex || 1;
+            div.style.boxSizing = 'border-box';
+
+            if (el.width) div.style.width = el.width + 'px';
+            if (el.height) div.style.height = el.height + 'px';
+
+            if (el.type === 'text' || el.type === 'variable') {
+                div.style.fontFamily = (el.fontFamily || 'Helvetica') + ', sans-serif';
+                div.style.fontSize = (el.fontSize || 14) + 'px';
+                div.style.color = el.color || '#1e293b';
+                div.style.textAlign = el.align || 'left';
+                div.style.fontWeight = el.bold ? 'bold' : 'normal';
+                div.style.fontStyle = el.italic ? 'italic' : 'normal';
+                div.style.textDecoration = el.underline ? 'underline' : 'none';
+                div.style.whiteSpace = 'pre-wrap';
+                div.style.lineHeight = '1.2';
+                div.innerHTML = replaceTemplateVariables(el.content || '');
+            }
+            else if (el.type === 'logo' || el.type === 'shape') {
+                const imgUrl = resolveAssetUrl(el.src, el.base64);
+                div.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; display:block; pointer-events:none;">`;
+            }
+            else if (el.type === 'signature') {
+                const sigUrl = resolveAssetUrl(el.src, el.base64);
+                let imgHtml = '<div style="height:55px;"></div>';
+                if (sigUrl) {
+                    imgHtml = `<img src="${sigUrl}" style="height:55px; width:auto; display:block; margin:0 auto 2px; object-fit:contain; pointer-events:none;">`;
+                }
+                div.style.fontFamily = 'Helvetica, sans-serif';
+                div.style.textAlign = 'center';
+                div.innerHTML = `
+                    ${imgHtml}
+                    <div style="width:90%; border-bottom:1.5px solid #000; margin:2px auto;"></div>
+                    <div style="font-size:11px; font-weight:bold; color:#0f172a; margin-top:2px;">${el.name || 'Authorized Signee'}</div>
+                    <div style="font-size:9px; color:#64748b; font-style:italic;">${el.position || 'Authorized Position'}</div>
+                `;
+            }
+            else if (el.type === 'box') {
+                div.style.background = el.bgColor || 'transparent';
+                div.style.border = `${el.borderWidth || 0}px ${el.borderStyle || 'solid'} ${el.borderColor || '#000'}`;
+                div.style.borderRadius = `${el.borderRadius || 0}px`;
+            }
+
+            container.appendChild(div);
+        });
+    }
+
+    // Main Interactive Preview Engine
     function renderPreview() {
+        const activeTpl = customTemplates[currentSection];
+        const hasCustom = activeTpl && activeTpl.elements && activeTpl.elements.length > 0;
+        const isCustom = hasCustom && (previewMode[currentSection] === 'custom');
+
+        // Mode switch buttons & custom badge in preview header
+        const modeSwitch = document.getElementById('preview-mode-switch');
+        const badgeCustom = document.getElementById('badge-custom-active');
+        if (modeSwitch) {
+            modeSwitch.style.display = hasCustom ? 'inline-flex' : 'none';
+        }
+        if (badgeCustom) {
+            badgeCustom.style.display = isCustom ? 'inline-flex' : 'none';
+        }
+        const btnCustom = document.getElementById('btn-mode-custom');
+        const btnStandard = document.getElementById('btn-mode-standard');
+        if (btnCustom && btnStandard) {
+            btnCustom.classList.toggle('active', isCustom);
+            btnStandard.classList.toggle('active', !isCustom);
+        }
+
+        const standardPage = document.getElementById('preview-cert-page');
+        const customPage = document.getElementById('preview-custom-page');
+
+        if (isCustom) {
+            if (standardPage) standardPage.style.display = 'none';
+            if (customPage) customPage.style.display = 'block';
+            renderCustomPreview(activeTpl);
+        } else {
+            if (customPage) customPage.style.display = 'none';
+            if (standardPage) standardPage.style.display = 'block';
+            renderStandardPreview();
+        }
+
+        scalePreview();
+    }
+
+    // Standard Template Preview Engine
+    function renderStandardPreview() {
         const inputId = (currentSection === 'tidak_lolos') ? 'selected_template_tidak_lolos' : 'selected_template_lolos';
         const tplInput = document.getElementById(inputId);
         const template = tplInput ? tplInput.value : 'template_1';
@@ -1440,9 +1687,6 @@
 
         // Render Signatures
         renderSignatures();
-        
-        // Trigger scaling calculations
-        scalePreview();
     }
 
     function renderLogosInContainer(containerSelector, mainLogoUrl, mainLogoId, template) {
@@ -1572,13 +1816,24 @@
         if (!scaler) return;
         const container = document.getElementById('certificate-preview-container');
         if (!container) return;
-        
+        const aspect = document.getElementById('cert-preview-aspect');
+
+        const activeTpl = customTemplates[currentSection];
+        const hasCustom = activeTpl && activeTpl.elements && activeTpl.elements.length > 0;
+        const isCustom = hasCustom && (previewMode[currentSection] === 'custom');
+
         const containerW = container.offsetWidth;
-        const certNaturalW = 1020;
+        const certNaturalW = isCustom ? 1000 : 1020;
+        const certNaturalH = isCustom ? 706 : 642;
         const scale = containerW / certNaturalW;
-        
+
+        scaler.style.width = certNaturalW + 'px';
+        scaler.style.height = certNaturalH + 'px';
         scaler.style.transform = 'scale(' + scale + ')';
-        container.style.height = (scale * 642) + 'px';
+        container.style.height = (scale * certNaturalH) + 'px';
+        if (aspect) {
+            aspect.style.paddingTop = isCustom ? '70.6%' : '62.96%';
+        }
     }
 
     // Initialize Page

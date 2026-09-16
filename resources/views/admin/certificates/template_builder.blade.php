@@ -233,6 +233,9 @@
         </div>
     </div>
     <div class="d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="openPreviewModal()">
+            <i class="bi bi-eye-fill me-1"></i> Preview
+        </button>
         <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="resetTemplate()">
             <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
         </button>
@@ -545,6 +548,42 @@
     <input type="hidden" name="type" value="{{ $type }}">
     @endif
 </form>
+
+<!-- Modal Live Preview in Builder -->
+<div class="modal fade" id="builderPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-bottom py-3 px-4 bg-light d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:28px;height:28px;border-radius:8px;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+                        <i class="bi bi-eye-fill"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-800 mb-0" style="font-size:0.95rem;">Preview Hasil Sertifikat</h6>
+                        <small class="text-muted" style="font-size:0.75rem;">Pratinjau sertifikat dengan data demo tanpa garis panduan editor</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 d-flex justify-content-center align-items-center" style="background:#0f172a; min-height: 480px; overflow: auto;">
+                <div id="modal-preview-wrapper" style="position: relative; width: 1000px; height: 706px; background: #fff; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform-origin: top center; flex-shrink: 0;">
+                    <!-- Rendered preview elements without selection handles or dashed borders -->
+                </div>
+            </div>
+            <div class="modal-footer border-top py-2 px-4 bg-light d-flex justify-content-between">
+                <div class="small text-muted">
+                    <i class="bi bi-info-circle me-1"></i> Resolusi asli: 1000 x 706 px (Rasio A4 Landscape)
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary px-3 rounded-pill" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-sm btn-primary px-4 fw-bold rounded-pill" onclick="saveFromModal()">
+                        <i class="bi bi-cloud-check-fill me-1"></i> Simpan Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
@@ -610,6 +649,14 @@
         adjustCanvasScale();
     }
 
+    function resolveAssetUrl(src, base64) {
+        if (base64 && base64.length > 0) return base64;
+        if (!src) return '';
+        if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
+        const clean = src.replace(/^storage\//, '');
+        return "{{ asset('storage') }}/" + clean;
+    }
+
     function renderElementOnCanvas(el) {
         const div = document.createElement('div');
         div.className = 'canvas-element';
@@ -644,14 +691,16 @@
             div.innerHTML = content;
         } 
         else if (el.type === 'logo' || el.type === 'shape') {
-            div.innerHTML = `<img src="${el.base64 || el.src}" style="width:100%; height:100%; pointer-events:none; display:block;">`;
+            const imgUrl = resolveAssetUrl(el.src, el.base64);
+            div.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; pointer-events:none; display:block;">`;
         } 
         else if (el.type === 'signature') {
             div.style.fontFamily = 'Helvetica';
             div.style.textAlign = 'center';
             let imgHtml = `<div style="height:55px;"></div>`;
-            if (el.base64 || el.src) {
-                imgHtml = `<img src="${el.base64 || el.src}" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px;">`;
+            const sigUrl = resolveAssetUrl(el.src, el.base64);
+            if (sigUrl) {
+                imgHtml = `<img src="${sigUrl}" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px; object-fit:contain;">`;
             }
             div.innerHTML = `
                 ${imgHtml}
@@ -1618,6 +1667,120 @@
 
     window.addEventListener('resize', adjustCanvasScale);
     
+    function saveFromModal() {
+        const modalEl = document.getElementById('builderPreviewModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+        saveTemplate();
+    }
+
+    function openPreviewModal() {
+        const container = document.getElementById('modal-preview-wrapper');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        // Set background
+        if (templateState.background.gradient) {
+            container.style.background = templateState.background.gradient;
+        } else {
+            container.style.background = templateState.background.color || '#ffffff';
+        }
+
+        // Background image
+        if (templateState.background.image) {
+            const bgImg = document.createElement('img');
+            bgImg.src = templateState.background.image;
+            bgImg.style.cssText = 'position:absolute; left:0; top:0; width:100%; height:100%; z-index:1; pointer-events:none; display:block;';
+            container.appendChild(bgImg);
+        }
+
+        const demoName = 'Nama Peserta Demo';
+        const eventTitle = @json($event ? $event->title : ($course ? $course->name : 'Program'));
+        const dateStr = @json($event && $event->event_date ? $event->event_date->format('d F Y') : now()->format('d F Y'));
+        const certNo = '009';
+
+        function replaceVars(str) {
+            if (!str) return '';
+            return str
+                .replace(/\{\{nama\}\}/g, demoName)
+                .replace(/\{\{event\}\}/g, eventTitle)
+                .replace(/\{\{course\}\}/g, eventTitle)
+                .replace(/\{\{tanggal\}\}/g, dateStr)
+                .replace(/\{\{nomor_sertifikat\}\}/g, certNo);
+        }
+
+        templateState.elements.forEach(el => {
+            const div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.left = (el.x || 0) + 'px';
+            div.style.top = (el.y || 0) + 'px';
+            div.style.zIndex = el.zIndex || 1;
+            div.style.boxSizing = 'border-box';
+
+            if (el.width) div.style.width = el.width + 'px';
+            if (el.height) div.style.height = el.height + 'px';
+
+            if (el.type === 'text' || el.type === 'variable') {
+                div.style.fontFamily = (el.fontFamily || 'Helvetica') + ', sans-serif';
+                div.style.fontSize = (el.fontSize || 14) + 'px';
+                div.style.color = el.color || '#1e293b';
+                div.style.textAlign = el.align || 'left';
+                div.style.fontWeight = el.bold ? 'bold' : 'normal';
+                div.style.fontStyle = el.italic ? 'italic' : 'normal';
+                div.style.textDecoration = el.underline ? 'underline' : 'none';
+                div.style.whiteSpace = 'pre-wrap';
+                div.style.lineHeight = '1.2';
+                div.innerHTML = replaceVars(el.content || '');
+            }
+            else if (el.type === 'logo' || el.type === 'shape') {
+                const imgUrl = resolveAssetUrl(el.src, el.base64);
+                div.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; display:block; pointer-events:none;">`;
+            }
+            else if (el.type === 'signature') {
+                const sigUrl = resolveAssetUrl(el.src, el.base64);
+                let imgHtml = '<div style="height:55px;"></div>';
+                if (sigUrl) {
+                    imgHtml = `<img src="${sigUrl}" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px; object-fit:contain;">`;
+                }
+                div.style.fontFamily = 'Helvetica, sans-serif';
+                div.style.textAlign = 'center';
+                div.innerHTML = `
+                    ${imgHtml}
+                    <div style="width:90%; border-bottom:1.5px solid #000; margin:2px auto;"></div>
+                    <div style="font-size:11px; font-weight:bold; color:#0f172a; margin-top:2px;">${el.name || 'Authorized Signee'}</div>
+                    <div style="font-size:9px; color:#64748b; font-style:italic;">${el.position || 'Authorized Position'}</div>
+                `;
+            }
+            else if (el.type === 'box') {
+                div.style.background = el.bgColor || 'transparent';
+                div.style.border = `${el.borderWidth || 0}px ${el.borderStyle || 'solid'} ${el.borderColor || '#000'}`;
+                div.style.borderRadius = `${el.borderRadius || 0}px`;
+            }
+
+            container.appendChild(div);
+        });
+
+        // Show modal
+        const modalEl = document.getElementById('builderPreviewModal');
+        let modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(modalEl);
+        }
+        modalInstance.show();
+
+        // Scale container inside modal body
+        setTimeout(() => {
+            const body = modalEl.querySelector('.modal-body');
+            if (body) {
+                const bodyW = body.clientWidth - 40;
+                const scale = Math.min(1, bodyW / 1000);
+                container.style.transform = `scale(${scale})`;
+                body.style.minHeight = (scale * 706 + 50) + 'px';
+            }
+        }, 200);
+    }
+
     // Initializer call
     document.addEventListener('DOMContentLoaded', () => {
         initCanvas();
