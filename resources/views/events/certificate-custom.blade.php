@@ -8,7 +8,7 @@
     $elements = $customTemplate['elements'] ?? [];
 
     $dateStr = isset($issuedAt) ? \Carbon\Carbon::parse($issuedAt)->translatedFormat('d F Y') : now()->translatedFormat('d F Y');
-    $certNo = $certificateNumber ?? '009';
+    $certNo = $certificateNumber ?? '001/AKD10/AKD-BPA/2026';
     $userName = $user->name ?? 'Nama Peserta';
 
     // Helper to replace place holders

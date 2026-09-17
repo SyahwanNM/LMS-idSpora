@@ -1100,7 +1100,7 @@
                                 </div>
 
                                 <div class="verification-tag">VERIFIED BY IDSPORA.COM</div>
-                                <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: 009</div>
+                                <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: 001/AKD10/AKD-BPA/2026</div>
                             </div>
 
                             <!-- The dynamic certificate preview page for Custom Builder template -->
@@ -1471,7 +1471,7 @@
         const demoName = 'Nama Peserta Demo';
         const eventTitle = @json($event->title ?? 'Judul Event');
         const dateStr = @json($event->event_date ? $event->event_date->format('d F Y') : now()->format('d F Y'));
-        const certNo = '009';
+        const certNo = '001/AKD10/AKD-BPA/2026';
 
         return text
             .replace(/\{\{nama\}\}/g, demoName)

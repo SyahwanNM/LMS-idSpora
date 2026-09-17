@@ -814,9 +814,12 @@ class CertificateController extends Controller
             ->where('status', 'active')
             ->get();
 
+        $year = ($event && $event->event_date) ? $event->event_date->format('Y') : now()->format('Y');
+        $year = $year ?: '2026';
+
         $sequence = self::buildCertificateSequenceNumber($registrations, $reg, fn ($item) => $item->user?->name ?? $item->full_name ?? '');
 
-        return $sequence;
+        return "{$sequence}/AKD10/AKD-BPA/{$year}";
     }
 
     public static function generateCertificateNumberCourse($course, $enrollment) {
@@ -826,13 +829,21 @@ class CertificateController extends Controller
             ->where('status', 'completed')
             ->get();
 
+        $year = now()->format('Y') ?: '2026';
+
         $sequence = self::buildCertificateSequenceNumber($enrollments, $enrollment, fn ($item) => $item->user?->name ?? '');
 
-        return $sequence;
+        return "{$sequence}/AKD10/AKD-BPA/{$year}";
     }
 
     private static function buildCertificateSequenceNumber(Collection $records, $currentRecord, callable $nameResolver): string
     {
+        // If currentRecord already has a certificate number with a sequence (e.g. '009' or '009/AKD10/AKD-BPA/2026'), preserve it
+        $existing = data_get($currentRecord, 'certificate_number');
+        if (is_string($existing) && preg_match('/^(\d+)/', trim($existing), $matches)) {
+            return str_pad($matches[1], 3, '0', STR_PAD_LEFT);
+        }
+
         $sortedRecords = $records->sortBy(function ($record) use ($nameResolver) {
             $name = trim((string) $nameResolver($record));
             $id = (int) data_get($record, 'id', 0);
@@ -847,12 +858,12 @@ class CertificateController extends Controller
             $position = 0;
         }
 
-        return str_pad((string) (9 + (int) $position), 3, '0', STR_PAD_LEFT);
+        return str_pad((string) (1 + (int) $position), 3, '0', STR_PAD_LEFT);
     }
 
     private static function isSequentialCertificateNumber(?string $value): bool
     {
-        return is_string($value) && preg_match('/^\d{3}$/', $value) === 1;
+        return is_string($value) && preg_match('/^\d+\/AKD10\/AKD-BPA\/\d{4}$/', trim($value)) === 1;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

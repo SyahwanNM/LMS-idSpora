@@ -1749,7 +1749,7 @@
         const demoName = 'Nama Peserta Demo';
         const eventTitle = @json($event ? $event->title : ($course ? $course->name : 'Program'));
         const dateStr = @json($event && $event->event_date ? $event->event_date->format('d F Y') : now()->format('d F Y'));
-        const certNo = '009';
+        const certNo = '001/AKD10/AKD-BPA/2026';
 
         function replaceVars(str) {
             if (!str) return '';
