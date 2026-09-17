@@ -927,6 +927,17 @@ class CertificateController extends Controller
 
         $type = $request->input('type', 'lolos');
         $field = ($type === 'tidak_lolos') ? 'certificate_custom_template_tidak_lolos' : 'certificate_custom_template';
+
+        // Strip heavy base64 strings from elements that already have a file path (src) to keep database lightweight
+        if (isset($templateData['elements']) && is_array($templateData['elements'])) {
+            foreach ($templateData['elements'] as &$el) {
+                if (is_array($el) && !empty($el['src']) && isset($el['base64'])) {
+                    unset($el['base64']);
+                }
+            }
+            unset($el);
+        }
+
         $event->update([$field => $templateData]);
 
         if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
@@ -1009,6 +1020,16 @@ class CertificateController extends Controller
             return response()->json(['error' => 'JSON tidak valid'], 422);
         }
 
+        // Strip heavy base64 strings from elements that already have a file path (src) to keep database lightweight
+        if (isset($templateData['elements']) && is_array($templateData['elements'])) {
+            foreach ($templateData['elements'] as &$el) {
+                if (is_array($el) && !empty($el['src']) && isset($el['base64'])) {
+                    unset($el['base64']);
+                }
+            }
+            unset($el);
+        }
+
         $course->update(['certificate_custom_template' => $templateData]);
 
         if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
@@ -1082,28 +1103,39 @@ class CertificateController extends Controller
             return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
         }
 
-        // 2. Try direct public_path('uploads/' . $clean)
-        $uploadFile = public_path('uploads/' . $clean);
-        if (file_exists($uploadFile) && is_file($uploadFile)) {
-            $mime = (function_exists('mime_content_type') ? mime_content_type($uploadFile) : null) ?: 'image/png';
-            $content = base64_encode(file_get_contents($uploadFile));
-            return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
-        }
+        // 2. Try candidate filesystem locations
+        $candidates = [
+            public_path('uploads/' . $clean),
+            public_path('uploads/' . $rawPath),
+            storage_path('app/public/' . $clean),
+            storage_path('app/public/' . $rawPath),
+            public_path($clean),
+            public_path($rawPath),
+            public_path('storage/' . $clean),
+            base_path('../public_html/uploads/' . $clean),
+            base_path('../public_html/' . $clean),
+            base_path('../public_html/storage/' . $clean),
+            base_path('public/uploads/' . $clean),
+        ];
 
-        // 3. Try storage_path('app/public/' . $clean)
-        $storageFile = storage_path('app/public/' . $clean);
-        if (file_exists($storageFile) && is_file($storageFile)) {
-            $mime = (function_exists('mime_content_type') ? mime_content_type($storageFile) : null) ?: 'image/png';
-            $content = base64_encode(file_get_contents($storageFile));
-            return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
-        }
-
-        // 4. Try public_path($clean)
-        $directFile = public_path($clean);
-        if (file_exists($directFile) && is_file($directFile)) {
-            $mime = (function_exists('mime_content_type') ? mime_content_type($directFile) : null) ?: 'image/png';
-            $content = base64_encode(file_get_contents($directFile));
-            return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
+        foreach ($candidates as $cand) {
+            if ($cand && file_exists($cand) && is_file($cand)) {
+                $mime = @mime_content_type($cand);
+                if (!$mime) {
+                    $ext = strtolower(pathinfo($cand, PATHINFO_EXTENSION));
+                    $mimes = [
+                        'jpg'  => 'image/jpeg',
+                        'jpeg' => 'image/jpeg',
+                        'png'  => 'image/png',
+                        'gif'  => 'image/gif',
+                        'webp' => 'image/webp',
+                        'svg'  => 'image/svg+xml',
+                    ];
+                    $mime = $mimes[$ext] ?? 'image/png';
+                }
+                $content = base64_encode(file_get_contents($cand));
+                return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
+            }
         }
 
         return null;
@@ -1114,7 +1146,19 @@ class CertificateController extends Controller
      */
     private function hydrateCustomTemplateAssets(?array $template): ?array
     {
-        if (empty($template) || !is_array($template) || empty($template['elements']) || !is_array($template['elements'])) {
+        if (empty($template) || !is_array($template)) {
+            return $template;
+        }
+
+        // Hydrate background image if it's a file path
+        if (!empty($template['background']['image']) && is_string($template['background']['image']) && !str_starts_with($template['background']['image'], 'data:')) {
+            $resolvedBg = $this->resolveAssetBase64($template['background']['image']);
+            if ($resolvedBg) {
+                $template['background']['image'] = $resolvedBg['base64'];
+            }
+        }
+
+        if (empty($template['elements']) || !is_array($template['elements'])) {
             return $template;
         }
 

@@ -172,12 +172,10 @@ Route::get('/sertifikat-course', function () {
     return view('course.sertifikat-course');
 })->name('sertifikat-course');
 
-// Serve storage files (fix 403 error on Windows/PHP built-in server)
-// This route serves files from storage when symlink doesn't work properly
-Route::get('/storage/{path}', function ($path) {
+// Serve storage and upload files (fallback for hosting when symlink or direct web server mapping isn't active)
+$serveUploadedFile = function ($path) {
     // Decode URL-encoded path
     $path = urldecode($path);
-
 
     // Security: prevent directory traversal
     if (str_contains($path, "\0")) {
@@ -198,45 +196,55 @@ Route::get('/storage/{path}', function ($path) {
     $path = implode('/', $segments);
     $pathClean = preg_replace('#^(storage/app/public/|storage/|uploads/|public/)+#i', '', $path);
 
-    // Get file path in uploads or storage
-    $filePath = public_path('uploads/' . $pathClean);
-    if (!file_exists($filePath) || !is_file($filePath)) {
-        $filePath = public_path('uploads/' . $path);
+    // Try various locations where uploads might exist
+    $candidatePaths = [
+        public_path('uploads/' . $pathClean),
+        public_path('uploads/' . $path),
+        storage_path('app/public/' . $pathClean),
+        storage_path('app/public/' . $path),
+        public_path($pathClean),
+        public_path($path),
+        base_path('../public_html/uploads/' . $pathClean),
+        base_path('../public_html/' . $pathClean),
+    ];
+
+    $filePath = null;
+    foreach ($candidatePaths as $cand) {
+        if (file_exists($cand) && is_file($cand)) {
+            $filePath = $cand;
+            break;
+        }
     }
-    if (!file_exists($filePath) || !is_file($filePath)) {
-        $filePath = storage_path('app/public/' . $pathClean);
-    }
-    if (!file_exists($filePath) || !is_file($filePath)) {
-        $filePath = public_path($pathClean);
-    }
-    if (!file_exists($filePath) || !is_file($filePath)) {
+
+    if (!$filePath) {
         abort(404, 'File not found: ' . $path);
     }
 
-
     // Get MIME type
-    $mimeType = mime_content_type($filePath);
+    $mimeType = @mime_content_type($filePath);
     if (!$mimeType) {
-        // Fallback MIME types based on extension
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
         $mimeTypes = [
-            'jpg' => 'image/jpeg',
+            'jpg'  => 'image/jpeg',
             'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            'gif' => 'image/gif',
+            'png'  => 'image/png',
+            'gif'  => 'image/gif',
             'webp' => 'image/webp',
-            'pdf' => 'application/pdf',
+            'svg'  => 'image/svg+xml',
+            'pdf'  => 'application/pdf',
         ];
         $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
     }
-
 
     return response()->file($filePath, [
         'Content-Type' => $mimeType,
         'Cache-Control' => 'public, max-age=31536000',
         'Accept-Ranges' => 'bytes',
     ]);
-})->where('path', '.*')->name('storage.serve');
+};
+
+Route::get('/storage/{path}', $serveUploadedFile)->where('path', '.*')->name('storage.serve');
+Route::get('/uploads/{path}', $serveUploadedFile)->where('path', '.*')->name('uploads.serve');
 
 // Landing page: jika sudah login arahkan ke dashboard
 Route::get('/auth', function () {

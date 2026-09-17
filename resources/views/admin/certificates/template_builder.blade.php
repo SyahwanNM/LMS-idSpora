@@ -652,20 +652,30 @@
     function resolveAssetUrl(src, base64) {
         if (base64 && base64.length > 0) return base64;
         if (!src) return '';
-        if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
+        if (src.startsWith('data:') || src.startsWith('blob:')) return src;
+        if (src.startsWith('http://') || src.startsWith('https://')) {
+            if (window.location.protocol === 'https:' && src.startsWith('http://' + window.location.host)) {
+                return src.replace('http://', 'https://');
+            }
+            return src;
+        }
         let clean = src.replace(/\\/g, '/').replace(/^\/+/, '');
         clean = clean.replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
-        return "{{ asset('uploads') }}/" + clean;
+        return window.location.origin + '/uploads/' + clean;
     }
 
     function handleAssetImgFallback(img, cleanPath) {
         if (!img || !cleanPath) return;
+        const origin = window.location.origin;
         if (!img.dataset.fallbackStep) {
             img.dataset.fallbackStep = '1';
-            img.src = "{{ asset('storage') }}/" + cleanPath;
+            img.src = origin + '/storage/' + cleanPath;
         } else if (img.dataset.fallbackStep === '1') {
             img.dataset.fallbackStep = '2';
-            img.src = "{{ asset('') }}" + cleanPath;
+            img.src = origin + '/' + cleanPath;
+        } else if (img.dataset.fallbackStep === '2') {
+            img.dataset.fallbackStep = '3';
+            img.src = origin + '/uploads/' + cleanPath;
         }
     }
 
@@ -1589,12 +1599,30 @@
     }
 
     function saveTemplate() {
-        const json = JSON.stringify(templateState);
+        // Strip heavy base64 strings from elements that already have a file path (src)
+        // so we don't exceed POST payload limit (413 Payload Too Large) or DB column size limits!
+        const cleanState = JSON.parse(JSON.stringify(templateState));
+        if (cleanState.elements && Array.isArray(cleanState.elements)) {
+            cleanState.elements.forEach(el => {
+                if (el.src && el.src.length > 0) {
+                    delete el.base64;
+                }
+            });
+        }
+        const json = JSON.stringify(cleanState);
         document.getElementById('template_json_field').value = json;
         
-        // Submit form via fetch to prevent whole page reloads if desired
         const form = document.getElementById('save-template-form');
         const formData = new FormData(form);
+
+        Swal.fire({
+            title: 'Menyimpan...',
+            text: 'Sedang menyimpan template sertifikat...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
 
         fetch(form.action, {
             method: 'POST',
@@ -1604,19 +1632,26 @@
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                const msg = (data && (data.message || data.error)) ? (data.message || data.error) : `Error HTTP ${res.status}`;
+                throw new Error(msg);
+            }
+            return data;
+        })
         .then(data => {
-            if (data.success) {
-                Swal.fire('Berhasil!', data.message, 'success').then(() => {
+            if (data && data.success) {
+                Swal.fire('Berhasil!', data.message || 'Template berhasil disimpan!', 'success').then(() => {
                     // Navigate back
                     window.location.href = "{{ $event ? route('admin.crm.certificates.edit', $event) : route('admin.crm.certificates.edit-course', $course) }}";
                 });
             } else {
-                Swal.fire('Error', data.error || 'Gagal menyimpan template', 'error');
+                Swal.fire('Error', (data && (data.error || data.message)) || 'Gagal menyimpan template', 'error');
             }
         })
         .catch(err => {
-            Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+            Swal.fire('Error', err.message || 'Terjadi kesalahan sistem saat menyimpan template.', 'error');
         });
     }
 

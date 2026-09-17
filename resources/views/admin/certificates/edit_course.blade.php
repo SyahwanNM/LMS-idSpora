@@ -1037,20 +1037,30 @@
     function resolveAssetUrl(src, base64) {
         if (base64 && base64.length > 0) return base64;
         if (!src) return '';
-        if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
+        if (src.startsWith('data:') || src.startsWith('blob:')) return src;
+        if (src.startsWith('http://') || src.startsWith('https://')) {
+            if (window.location.protocol === 'https:' && src.startsWith('http://' + window.location.host)) {
+                return src.replace('http://', 'https://');
+            }
+            return src;
+        }
         let clean = src.replace(/\\/g, '/').replace(/^\/+/, '');
         clean = clean.replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
-        return "{{ asset('uploads') }}/" + clean;
+        return window.location.origin + '/uploads/' + clean;
     }
 
     function handleAssetImgFallback(img, cleanPath) {
         if (!img || !cleanPath) return;
+        const origin = window.location.origin;
         if (!img.dataset.fallbackStep) {
             img.dataset.fallbackStep = '1';
-            img.src = "{{ asset('storage') }}/" + cleanPath;
+            img.src = origin + '/storage/' + cleanPath;
         } else if (img.dataset.fallbackStep === '1') {
             img.dataset.fallbackStep = '2';
-            img.src = "{{ asset('') }}" + cleanPath;
+            img.src = origin + '/' + cleanPath;
+        } else if (img.dataset.fallbackStep === '2') {
+            img.dataset.fallbackStep = '3';
+            img.src = origin + '/uploads/' + cleanPath;
         }
     }
 
