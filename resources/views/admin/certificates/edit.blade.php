@@ -1440,8 +1440,20 @@
         if (base64 && base64.length > 0) return base64;
         if (!src) return '';
         if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
-        const clean = src.replace(/^storage\//, '');
-        return "{{ asset('storage') }}/" + clean;
+        let clean = src.replace(/\\/g, '/').replace(/^\/+/, '');
+        clean = clean.replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
+        return "{{ asset('uploads') }}/" + clean;
+    }
+
+    function handleAssetImgFallback(img, cleanPath) {
+        if (!img || !cleanPath) return;
+        if (!img.dataset.fallbackStep) {
+            img.dataset.fallbackStep = '1';
+            img.src = "{{ asset('storage') }}/" + cleanPath;
+        } else if (img.dataset.fallbackStep === '1') {
+            img.dataset.fallbackStep = '2';
+            img.src = "{{ asset('') }}" + cleanPath;
+        }
     }
 
     function replaceTemplateVariables(text) {
@@ -1508,13 +1520,15 @@
             }
             else if (el.type === 'logo' || el.type === 'shape') {
                 const imgUrl = resolveAssetUrl(el.src, el.base64);
-                div.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; display:block; pointer-events:none;">`;
+                const cleanPath = (el.src || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
+                div.innerHTML = `<img src="${imgUrl}" onerror="handleAssetImgFallback(this, '${cleanPath}')" style="width:100%; height:100%; display:block; pointer-events:none;">`;
             }
             else if (el.type === 'signature') {
                 const sigUrl = resolveAssetUrl(el.src, el.base64);
+                const cleanPath = (el.src || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
                 let imgHtml = '<div style="height:55px;"></div>';
                 if (sigUrl) {
-                    imgHtml = `<img src="${sigUrl}" style="height:55px; width:auto; display:block; margin:0 auto 2px; object-fit:contain; pointer-events:none;">`;
+                    imgHtml = `<img src="${sigUrl}" onerror="handleAssetImgFallback(this, '${cleanPath}')" style="height:55px; width:auto; display:block; margin:0 auto 2px; object-fit:contain; pointer-events:none;">`;
                 }
                 div.style.fontFamily = 'Helvetica, sans-serif';
                 div.style.textAlign = 'center';

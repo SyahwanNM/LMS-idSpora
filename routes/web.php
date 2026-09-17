@@ -196,10 +196,19 @@ Route::get('/storage/{path}', function ($path) {
 
     // Use normalized path for filesystem lookup
     $path = implode('/', $segments);
+    $pathClean = preg_replace('#^(storage/app/public/|storage/|uploads/|public/)+#i', '', $path);
 
-    // Get file path in uploads
-    $filePath = public_path('uploads/' . $path);
-    // Check if file exists
+    // Get file path in uploads or storage
+    $filePath = public_path('uploads/' . $pathClean);
+    if (!file_exists($filePath) || !is_file($filePath)) {
+        $filePath = public_path('uploads/' . $path);
+    }
+    if (!file_exists($filePath) || !is_file($filePath)) {
+        $filePath = storage_path('app/public/' . $pathClean);
+    }
+    if (!file_exists($filePath) || !is_file($filePath)) {
+        $filePath = public_path($pathClean);
+    }
     if (!file_exists($filePath) || !is_file($filePath)) {
         abort(404, 'File not found: ' . $path);
     }

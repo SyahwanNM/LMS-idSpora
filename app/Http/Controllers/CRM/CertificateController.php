@@ -59,6 +59,9 @@ class CertificateController extends Controller
             abort(403, 'Hanya admin yang dapat mengakses fitur ini');
         }
 
+        $event->certificate_custom_template = $this->hydrateCustomTemplateAssets($event->certificate_custom_template);
+        $event->certificate_custom_template_tidak_lolos = $this->hydrateCustomTemplateAssets($event->certificate_custom_template_tidak_lolos);
+
         return view('admin.certificates.edit', compact('event'));
     }
 
@@ -205,6 +208,8 @@ class CertificateController extends Controller
         if(!Auth::check() || Auth::user()->role !== 'admin'){
             abort(403, 'Hanya admin yang dapat mengakses fitur ini');
         }
+
+        $course->certificate_custom_template = $this->hydrateCustomTemplateAssets($course->certificate_custom_template);
 
         return view('admin.certificates.edit_course', compact('course'));
     }
@@ -876,14 +881,9 @@ class CertificateController extends Controller
 
         $existingLogos = [];
         foreach (is_array($rawLogos) ? $rawLogos : [] as $l) {
-            $path = str_replace('storage/', '', $l);
-            if (Storage::disk('public')->exists($path)) {
-                $mime    = Storage::disk('public')->mimeType($path);
-                $content = base64_encode(Storage::disk('public')->get($path));
-                $existingLogos[] = [
-                    'path'   => $l,
-                    'base64' => "data:$mime;base64,$content",
-                ];
+            $resolved = $this->resolveAssetBase64($l);
+            if ($resolved) {
+                $existingLogos[] = $resolved;
             }
         }
 
@@ -892,13 +892,18 @@ class CertificateController extends Controller
             $imgPath = is_array($s) ? ($s['image'] ?? '') : $s;
             $sigName = is_array($s) ? ($s['name'] ?? '') : '';
             $sigPos  = is_array($s) ? ($s['position'] ?? '') : '';
-            $path    = str_replace('storage/', '', $imgPath);
-            if ($path && Storage::disk('public')->exists($path)) {
-                $mime    = Storage::disk('public')->mimeType($path);
-                $b64     = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($path));
-                $existingSigs[] = ['path' => $imgPath, 'base64' => $b64, 'name' => $sigName, 'position' => $sigPos];
+            $resolved = $this->resolveAssetBase64($imgPath);
+            if ($resolved) {
+                $existingSigs[] = [
+                    'path'     => $resolved['path'],
+                    'base64'   => $resolved['base64'],
+                    'name'     => $sigName,
+                    'position' => $sigPos,
+                ];
             }
         }
+
+        $customTemplate = $this->hydrateCustomTemplateAssets($customTemplate);
 
         return view('admin.certificates.template_builder', compact('event', 'existingLogos', 'existingSigs', 'customTemplate', 'type'));
     }
@@ -954,11 +959,9 @@ class CertificateController extends Controller
 
         $existingLogos = [];
         foreach (is_array($course->certificate_logo) ? $course->certificate_logo : [] as $l) {
-            $path = str_replace('storage/', '', $l);
-            if (Storage::disk('public')->exists($path)) {
-                $mime    = Storage::disk('public')->mimeType($path);
-                $content = base64_encode(Storage::disk('public')->get($path));
-                $existingLogos[] = ['path' => $l, 'base64' => "data:$mime;base64,$content"];
+            $resolved = $this->resolveAssetBase64($l);
+            if ($resolved) {
+                $existingLogos[] = $resolved;
             }
         }
 
@@ -967,15 +970,18 @@ class CertificateController extends Controller
             $imgPath = is_array($s) ? ($s['image'] ?? '') : $s;
             $sigName = is_array($s) ? ($s['name'] ?? '') : '';
             $sigPos  = is_array($s) ? ($s['position'] ?? '') : '';
-            $path    = str_replace('storage/', '', $imgPath);
-            if ($path && Storage::disk('public')->exists($path)) {
-                $mime    = Storage::disk('public')->mimeType($path);
-                $b64     = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($path));
-                $existingSigs[] = ['path' => $imgPath, 'base64' => $b64, 'name' => $sigName, 'position' => $sigPos];
+            $resolved = $this->resolveAssetBase64($imgPath);
+            if ($resolved) {
+                $existingSigs[] = [
+                    'path'     => $resolved['path'],
+                    'base64'   => $resolved['base64'],
+                    'name'     => $sigName,
+                    'position' => $sigPos,
+                ];
             }
         }
 
-        $customTemplate = $course->certificate_custom_template;
+        $customTemplate = $this->hydrateCustomTemplateAssets($course->certificate_custom_template);
 
         return view('admin.certificates.template_builder', [
             'event'          => null,
@@ -1036,7 +1042,7 @@ class CertificateController extends Controller
         ]);
 
         $path = $request->file('file')->store('certificates/builder', 'public');
-        $url  = asset('storage/' . $path);
+        $url  = asset('uploads/' . $path);
 
         $mime    = Storage::disk('public')->mimeType($path);
         $content = base64_encode(Storage::disk('public')->get($path));
@@ -1047,5 +1053,87 @@ class CertificateController extends Controller
             'url'    => $url,
             'base64' => $base64,
         ]);
+    }
+
+    /**
+     * Resolve a relative or absolute storage path to a valid base64 data URI and cleaned path.
+     */
+    private function resolveAssetBase64(?string $rawPath): ?array
+    {
+        if (empty($rawPath) || !is_string($rawPath)) return null;
+
+        // If it's already a base64 data URI
+        if (str_starts_with($rawPath, 'data:image')) {
+            return ['path' => '', 'base64' => $rawPath];
+        }
+
+        // Normalize slashes and strip common prefixes
+        $clean = str_replace('\\', '/', trim($rawPath));
+        $clean = preg_replace('#^https?://[^/]+/(uploads/|storage/)?#i', '', $clean);
+        $clean = ltrim($clean, '/');
+        $clean = preg_replace('#^(storage/app/public/|storage/|uploads/|public/)+#i', '', $clean);
+
+        if ($clean === '') return null;
+
+        // 1. Try public disk (which maps to public/uploads)
+        if (Storage::disk('public')->exists($clean)) {
+            $mime = Storage::disk('public')->mimeType($clean) ?: 'image/png';
+            $content = base64_encode(Storage::disk('public')->get($clean));
+            return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
+        }
+
+        // 2. Try direct public_path('uploads/' . $clean)
+        $uploadFile = public_path('uploads/' . $clean);
+        if (file_exists($uploadFile) && is_file($uploadFile)) {
+            $mime = (function_exists('mime_content_type') ? mime_content_type($uploadFile) : null) ?: 'image/png';
+            $content = base64_encode(file_get_contents($uploadFile));
+            return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
+        }
+
+        // 3. Try storage_path('app/public/' . $clean)
+        $storageFile = storage_path('app/public/' . $clean);
+        if (file_exists($storageFile) && is_file($storageFile)) {
+            $mime = (function_exists('mime_content_type') ? mime_content_type($storageFile) : null) ?: 'image/png';
+            $content = base64_encode(file_get_contents($storageFile));
+            return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
+        }
+
+        // 4. Try public_path($clean)
+        $directFile = public_path($clean);
+        if (file_exists($directFile) && is_file($directFile)) {
+            $mime = (function_exists('mime_content_type') ? mime_content_type($directFile) : null) ?: 'image/png';
+            $content = base64_encode(file_get_contents($directFile));
+            return ['path' => $clean, 'base64' => "data:$mime;base64,$content"];
+        }
+
+        return null;
+    }
+
+    /**
+     * Hydrate base64 data URIs for all logo/shape/signature elements in a custom template.
+     */
+    private function hydrateCustomTemplateAssets(?array $template): ?array
+    {
+        if (empty($template) || !is_array($template) || empty($template['elements']) || !is_array($template['elements'])) {
+            return $template;
+        }
+
+        foreach ($template['elements'] as &$el) {
+            if (!is_array($el)) continue;
+            $type = $el['type'] ?? '';
+            if (in_array($type, ['logo', 'shape', 'signature'])) {
+                $hasValidB64 = !empty($el['base64']) && is_string($el['base64']) && str_starts_with($el['base64'], 'data:');
+                if (!$hasValidB64 && !empty($el['src'])) {
+                    $resolved = $this->resolveAssetBase64($el['src']);
+                    if ($resolved) {
+                        $el['base64'] = $resolved['base64'];
+                        $el['src']    = $resolved['path'];
+                    }
+                }
+            }
+        }
+        unset($el);
+
+        return $template;
     }
 }

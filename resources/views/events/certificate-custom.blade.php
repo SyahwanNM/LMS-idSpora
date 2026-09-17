@@ -103,15 +103,25 @@
         @elseif($el['type'] === 'logo' || $el['type'] === 'shape')
             @php
                 $imgSrc = $el['src'] ?? '';
-                if (str_starts_with($imgSrc, 'storage/')) {
-                    $imgSrc = str_replace('storage/', '', $imgSrc);
-                }
+                $cleanSrc = str_replace('\\', '/', trim((string) $imgSrc));
+                $cleanSrc = ltrim($cleanSrc, '/');
+                $cleanSrc = preg_replace('#^(storage/app/public/|storage/|uploads/|public/)+#i', '', $cleanSrc);
                 
                 // Use existing base64 (e.g. for vector ornaments) or fallback to storage file path
                 $logoBase64 = $el['base64'] ?? '';
-                if (!$logoBase64 && $imgSrc && Storage::disk('public')->exists($imgSrc)) {
-                    $mime = Storage::disk('public')->mimeType($imgSrc);
-                    $logoBase64 = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($imgSrc));
+                if (!$logoBase64 && $cleanSrc !== '') {
+                    if (Storage::disk('public')->exists($cleanSrc)) {
+                        $mime = Storage::disk('public')->mimeType($cleanSrc) ?: 'image/png';
+                        $logoBase64 = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($cleanSrc));
+                    } elseif (file_exists(public_path('uploads/' . $cleanSrc))) {
+                        $fPath = public_path('uploads/' . $cleanSrc);
+                        $mime = (function_exists('mime_content_type') ? mime_content_type($fPath) : null) ?: 'image/png';
+                        $logoBase64 = "data:$mime;base64," . base64_encode(file_get_contents($fPath));
+                    } elseif (file_exists(storage_path('app/public/' . $cleanSrc))) {
+                        $fPath = storage_path('app/public/' . $cleanSrc);
+                        $mime = (function_exists('mime_content_type') ? mime_content_type($fPath) : null) ?: 'image/png';
+                        $logoBase64 = "data:$mime;base64," . base64_encode(file_get_contents($fPath));
+                    }
                 }
             @endphp
             @if($logoBase64)
@@ -122,15 +132,25 @@
         @elseif($el['type'] === 'signature')
             @php
                 $imgSrc = $el['src'] ?? '';
-                if (str_starts_with($imgSrc, 'storage/')) {
-                    $imgSrc = str_replace('storage/', '', $imgSrc);
-                }
+                $cleanSrc = str_replace('\\', '/', trim((string) $imgSrc));
+                $cleanSrc = ltrim($cleanSrc, '/');
+                $cleanSrc = preg_replace('#^(storage/app/public/|storage/|uploads/|public/)+#i', '', $cleanSrc);
                 
                 // Fetch base64 of the image for rendering in dompdf
-                $sigBase64 = '';
-                if ($imgSrc && Storage::disk('public')->exists($imgSrc)) {
-                    $mime = Storage::disk('public')->mimeType($imgSrc);
-                    $sigBase64 = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($imgSrc));
+                $sigBase64 = $el['base64'] ?? '';
+                if (!$sigBase64 && $cleanSrc !== '') {
+                    if (Storage::disk('public')->exists($cleanSrc)) {
+                        $mime = Storage::disk('public')->mimeType($cleanSrc) ?: 'image/png';
+                        $sigBase64 = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($cleanSrc));
+                    } elseif (file_exists(public_path('uploads/' . $cleanSrc))) {
+                        $fPath = public_path('uploads/' . $cleanSrc);
+                        $mime = (function_exists('mime_content_type') ? mime_content_type($fPath) : null) ?: 'image/png';
+                        $sigBase64 = "data:$mime;base64," . base64_encode(file_get_contents($fPath));
+                    } elseif (file_exists(storage_path('app/public/' . $cleanSrc))) {
+                        $fPath = storage_path('app/public/' . $cleanSrc);
+                        $mime = (function_exists('mime_content_type') ? mime_content_type($fPath) : null) ?: 'image/png';
+                        $sigBase64 = "data:$mime;base64," . base64_encode(file_get_contents($fPath));
+                    }
                 }
                 $sigName = $el['name'] ?? '';
                 $sigPos = $el['position'] ?? '';

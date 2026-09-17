@@ -653,8 +653,20 @@
         if (base64 && base64.length > 0) return base64;
         if (!src) return '';
         if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) return src;
-        const clean = src.replace(/^storage\//, '');
-        return "{{ asset('storage') }}/" + clean;
+        let clean = src.replace(/\\/g, '/').replace(/^\/+/, '');
+        clean = clean.replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
+        return "{{ asset('uploads') }}/" + clean;
+    }
+
+    function handleAssetImgFallback(img, cleanPath) {
+        if (!img || !cleanPath) return;
+        if (!img.dataset.fallbackStep) {
+            img.dataset.fallbackStep = '1';
+            img.src = "{{ asset('storage') }}/" + cleanPath;
+        } else if (img.dataset.fallbackStep === '1') {
+            img.dataset.fallbackStep = '2';
+            img.src = "{{ asset('') }}" + cleanPath;
+        }
     }
 
     function renderElementOnCanvas(el) {
@@ -692,15 +704,17 @@
         } 
         else if (el.type === 'logo' || el.type === 'shape') {
             const imgUrl = resolveAssetUrl(el.src, el.base64);
-            div.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; pointer-events:none; display:block;">`;
+            const cleanPath = (el.src || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
+            div.innerHTML = `<img src="${imgUrl}" onerror="handleAssetImgFallback(this, '${cleanPath}')" style="width:100%; height:100%; pointer-events:none; display:block;">`;
         } 
         else if (el.type === 'signature') {
             div.style.fontFamily = 'Helvetica';
             div.style.textAlign = 'center';
             let imgHtml = `<div style="height:55px;"></div>`;
             const sigUrl = resolveAssetUrl(el.src, el.base64);
+            const cleanPath = (el.src || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
             if (sigUrl) {
-                imgHtml = `<img src="${sigUrl}" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px; object-fit:contain;">`;
+                imgHtml = `<img src="${sigUrl}" onerror="handleAssetImgFallback(this, '${cleanPath}')" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px; object-fit:contain;">`;
             }
             div.innerHTML = `
                 ${imgHtml}
@@ -976,12 +990,14 @@
                 const posDiv = div.querySelector('div:nth-of-type(2)');
                 // Complete re-render signature to match layout
                 let imgHtml = `<div style="height:55px;"></div>`;
-                if (el.base64 || el.src) {
-                    imgHtml = `<img src="${el.base64 || el.src}" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px;">`;
+                const sigUrl = resolveAssetUrl(el.src, el.base64);
+                const cleanPath = (el.src || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
+                if (sigUrl) {
+                    imgHtml = `<img src="${sigUrl}" onerror="handleAssetImgFallback(this, '${cleanPath}')" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px; object-fit:contain;">`;
                 }
                 div.innerHTML = `
                     ${imgHtml}
-                    <div style="width:90%; border-bottom:1px solid #000; margin:2px auto;"></div>
+                    <div style="width:90%; border-bottom:1.5px solid #000; margin:2px auto;"></div>
                     <div style="font-size:11px; font-weight:bold; color:#0f172a; margin-top:2px;">${el.name || 'Authorized Signee'}</div>
                     <div style="font-size:9px; color:#64748b; font-style:italic;">${el.position || 'Authorized Position'}</div>
                 `;
@@ -1735,13 +1751,15 @@
             }
             else if (el.type === 'logo' || el.type === 'shape') {
                 const imgUrl = resolveAssetUrl(el.src, el.base64);
-                div.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; display:block; pointer-events:none;">`;
+                const cleanPath = (el.src || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
+                div.innerHTML = `<img src="${imgUrl}" onerror="handleAssetImgFallback(this, '${cleanPath}')" style="width:100%; height:100%; display:block; pointer-events:none;">`;
             }
             else if (el.type === 'signature') {
                 const sigUrl = resolveAssetUrl(el.src, el.base64);
+                const cleanPath = (el.src || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/^(storage\/app\/public\/|storage\/|uploads\/|public\/)+/gi, '');
                 let imgHtml = '<div style="height:55px;"></div>';
                 if (sigUrl) {
-                    imgHtml = `<img src="${sigUrl}" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px; object-fit:contain;">`;
+                    imgHtml = `<img src="${sigUrl}" onerror="handleAssetImgFallback(this, '${cleanPath}')" style="height:55px; width:auto; pointer-events:none; display:block; margin:0 auto 2px; object-fit:contain;">`;
                 }
                 div.style.fontFamily = 'Helvetica, sans-serif';
                 div.style.textAlign = 'center';
