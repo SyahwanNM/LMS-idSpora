@@ -40,6 +40,9 @@ use App\Http\Controllers\User\ResellerController;
             Route::get('/certificates/events/{event}/template-builder', [\App\Http\Controllers\CRM\CertificateController::class, 'templateBuilder'])->name('certificates.template-builder');
             Route::post('/certificates/events/{event}/template-builder', [\App\Http\Controllers\CRM\CertificateController::class, 'saveCustomTemplate'])->name('certificates.save-custom-template');
             Route::post('/certificates/events/{event}/template-builder/reset', [\App\Http\Controllers\CRM\CertificateController::class, 'resetCustomTemplate'])->name('certificates.reset-custom-template');
+            Route::post('/certificates/events/{event}/winner-categories', [\App\Http\Controllers\CRM\CertificateController::class, 'storeWinnerCategory'])->name('certificates.winner-categories.store');
+            Route::put('/certificates/events/{event}/winner-categories/{category}', [\App\Http\Controllers\CRM\CertificateController::class, 'updateWinnerCategory'])->name('certificates.winner-categories.update');
+            Route::delete('/certificates/events/{event}/winner-categories/{category}', [\App\Http\Controllers\CRM\CertificateController::class, 'destroyWinnerCategory'])->name('certificates.winner-categories.destroy');
 
             // Course Certificates
             Route::get('/certificates/courses/{course}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'editCourse'])->name('certificates.edit-course');

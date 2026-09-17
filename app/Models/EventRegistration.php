@@ -100,6 +100,18 @@ class EventRegistration extends Model
         return $this->hasMany(EventDailyAttendance::class, 'event_registration_id');
     }
 
+    public function winnerAssignments()
+    {
+        return $this->hasMany(EventRegistrationWinner::class, 'event_registration_id');
+    }
+
+    public function winnerCategories()
+    {
+        return $this->belongsToMany(EventWinnerCategory::class, 'event_registration_winners', 'event_registration_id', 'event_winner_category_id')
+                    ->withPivot('winner_title')
+                    ->withTimestamps();
+    }
+
     protected static function booted()
     {
         static::creating(function ($registration) {

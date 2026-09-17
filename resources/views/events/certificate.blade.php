@@ -83,7 +83,7 @@
             </div>
             <div class="d-flex gap-3">
                 @if($certificateReady)
-                    <a href="{{ route('certificates.download', [$event, $registration]) }}" class="btn-download px-4" target="_blank">
+                    <a href="{{ route('certificates.download', [$event, $registration]) . ($winnerCategory ? '?category_id=' . $winnerCategory->id : '') }}" class="btn-download px-4" target="_blank">
                         <i class="bi bi-download me-2"></i> Download
                     </a>
                 @else
@@ -91,13 +91,32 @@
                         <i class="bi bi-clock me-2"></i> Belum Tersedia
                     </button>
                     @if(app()->environment('local') || Auth::user()->role === 'admin')
-                    <a href="{{ route('certificates.download', [$event, $registration]) }}?force=1" class="btn btn-outline-primary shadow-sm" target="_blank">
+                    <a href="{{ route('certificates.download', [$event, $registration]) }}?force=1{{ $winnerCategory ? '&category_id=' . $winnerCategory->id : '' }}" class="btn-outline-primary btn shadow-sm" target="_blank">
                         <i class="bi bi-bug me-2"></i> Force Download
                     </a>
                     @endif
                 @endif
             </div>
         </div>
+
+        @if(isset($userWinnerAssignments) && $userWinnerAssignments->count() > 1)
+            <div class="card border-warning mb-4 bg-warning-subtle p-3 rounded-4 shadow-sm">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                    <div>
+                        <div class="fw-bold text-dark"><i class="bi bi-trophy-fill text-warning me-1"></i> Anda Memenangkan {{ $userWinnerAssignments->count() }} Kategori!</div>
+                        <div class="text-muted small">Pilih sertifikat kategori yang ingin Anda lihat atau unduh:</div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($userWinnerAssignments as $assignment)
+                            <a href="{{ route('certificates.show', [$event, $registration, 'category_id' => $assignment->event_winner_category_id]) }}" 
+                               class="btn btn-sm {{ (isset($winnerCategory) && $winnerCategory && $winnerCategory->id == $assignment->event_winner_category_id) ? 'btn-warning text-dark fw-bold' : 'btn-outline-dark' }}">
+                                🏆 {{ $assignment->category->name ?? 'Kategori' }} ({{ $assignment->winner_title }})
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
 
         @if(!$certificateReady)
             <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4">
@@ -121,8 +140,9 @@
                             $isMenang = in_array((int)($registration->id ?? 0), array_map('intval', $event->certificate_winner_ids), true);
                         }
                         $winnerTitle = $winnerTitle ?? ($registration->winner_title ?? 'Pemenang');
+                        $winnerCategoryName = $winnerCategoryName ?? ($winnerCategory->name ?? '');
 
-                        $activeCustomTpl = $customTemplate ?? (
+                        $activeCustomTpl = $activeCustomTemplate ?? $customTemplate ?? (
                             ($isMenang && !empty($event->certificate_custom_template_pemenang))
                                 ? $event->certificate_custom_template_pemenang
                                 : (($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
@@ -131,9 +151,9 @@
                         );
                     @endphp
                     @if(!empty($activeCustomTpl))
-                        @include('events.certificate-custom', ['is_preview' => true, 'customTemplate' => $activeCustomTpl, 'winnerTitle' => $winnerTitle])
+                        @include('events.certificate-custom', ['is_preview' => true, 'customTemplate' => $activeCustomTpl, 'winnerTitle' => $winnerTitle, 'winnerCategoryName' => $winnerCategoryName])
                     @else
-                        @include('events.certificate-pdf', ['is_preview' => true, 'template' => $template, 'isLomba' => $isLomba, 'isLolos' => $isLolos, 'isMenang' => $isMenang, 'winnerTitle' => $winnerTitle])
+                        @include('events.certificate-pdf', ['is_preview' => true, 'template' => $template, 'isLomba' => $isLomba, 'isLolos' => $isLolos, 'isMenang' => $isMenang, 'winnerTitle' => $winnerTitle, 'winnerCategoryName' => $winnerCategoryName])
                     @endif
                 </div>
             </div>

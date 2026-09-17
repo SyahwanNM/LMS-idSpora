@@ -599,7 +599,7 @@
 
                 <p style="font-size: 9pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Atas Partisipasinya Sebagai</p>
                 <p style="font-size: 14pt; font-weight: bold; margin: 1mm 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">
-                    {{ $isMenang ? strtoupper($winnerTitle ?? 'PESERTA PEMENANG') : ($isLomba ? ($isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA') }}
+                    {{ $isMenang ? strtoupper($winnerTitle ?? 'PESERTA PEMENANG') . (!empty($winnerCategoryName) ? ' - ' . strtoupper($winnerCategoryName) : '') : ($isLomba ? ($isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA') }}
                 </p>
                 <p style="font-size: 9pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
                     {{ $isLomba ? 'Dalam Kegiatan Kompetisi' : 'Dalam Kegiatan Workshop' }}
@@ -771,7 +771,7 @@
                     @endif
                     <div style="width: 70%; border-top: 1.5px dotted #7f1d1d; margin: 6px auto 12px auto;"></div>
                     <p style="font-size:10pt;line-height:1.4;color:#1e293b;margin-top:5px;">
-                        {{ $isMenang ? 'telah berhasil meraih predikat juara dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program') }}
+                        {{ $isMenang ? 'telah berhasil meraih predikat ' . ($winnerTitle ?? 'Juara') . (!empty($winnerCategoryName) ? ' (' . $winnerCategoryName . ')' : '') . ' dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program') }}
                     </p>
                     <h2 style="font-size:16pt;color:#0f172a;margin:4px 0;">"{{ $event->title }}"</h2>
                     <p style="font-size:8.5pt;color:#64748b;">Issued on {{ $issuedAt->format('d F Y') }} by idSpora Team</p>
@@ -858,7 +858,7 @@
                 <p style="font-size:12pt;color:#64748b;font-style:italic;margin-bottom:2px;">This is to certify that</p>
                 <div class="recipient-name">{{ strtoupper($user->name) }}</div>
                 <p style="font-size:10pt;color:#1e293b;margin-top:5px;">
-                    {{ $isMenang ? 'telah berhasil meraih predikat juara dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program') }}
+                    {{ $isMenang ? 'telah berhasil meraih predikat ' . ($winnerTitle ?? 'Juara') . (!empty($winnerCategoryName) ? ' (' . $winnerCategoryName . ')' : '') . ' dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program') }}
                 </p>
                 <h2 style="font-size:16pt;color:#0f172a;margin:4px 0;">"{{ $event->title }}"</h2>
                 <p style="font-size:8.5pt;color:#64748b;">Issued on {{ $issuedAt->format('d F Y') }} by idSpora Team</p>
@@ -919,7 +919,7 @@
                 <p style="font-size: 11pt; color: #64748b; font-style: italic; margin-bottom: 2px;">This certificate is proudly presented to</p>
                 <div class="recipient-name">{{ strtoupper($user->name) }}</div>
                 <p style="font-size: 10pt; color: #1e293b; margin-top: 5px;">
-                    {{ $isMenang ? 'telah berhasil meraih predikat juara dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'for exceptional completion of the professional program') }}
+                    {{ $isMenang ? 'telah berhasil meraih predikat ' . ($winnerTitle ?? 'Juara') . (!empty($winnerCategoryName) ? ' (' . $winnerCategoryName . ')' : '') . ' dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'for exceptional completion of the professional program') }}
                 </p>
                 <h2 style="font-size: 16pt; color: #1e1b4b; margin: 4px 0; font-family: 'Georgia', serif;">"{{ $event->title }}"</h2>
                 <p style="font-size: 8.5pt; color: #64748b;">Issued by IdSPora Authority on {{ $event->event_date?->format('d F Y') }}</p>

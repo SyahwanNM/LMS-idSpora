@@ -11,9 +11,10 @@
     $certNo = $certificateNumber ?? '001/AKD10/AKD-BPA/2026';
     $userName = $user->name ?? 'Nama Peserta';
     $winnerTitle = $winnerTitle ?? ($registration->winner_title ?? 'Pemenang');
+    $winnerCategoryName = $winnerCategoryName ?? ($winnerCategory->name ?? '');
 
     // Helper to replace place holders
-    $replaceVars = function($text) use ($userName, $itemTitle, $dateStr, $certNo, $winnerTitle) {
+    $replaceVars = function($text) use ($userName, $itemTitle, $dateStr, $certNo, $winnerTitle, $winnerCategoryName) {
         $text = str_replace('{{nama}}', $userName, $text);
         $text = str_replace('{{event}}', $itemTitle, $text);
         $text = str_replace('{{course}}', $itemTitle, $text);
@@ -22,6 +23,7 @@
         $text = str_replace('{{juara}}', $winnerTitle, $text);
         $text = str_replace('{{predikat}}', $winnerTitle, $text);
         $text = str_replace('{{pemenang}}', $winnerTitle, $text);
+        $text = str_replace('{{kategori}}', $winnerCategoryName, $text);
         return $text;
     };
 @endphp

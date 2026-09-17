@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\EventWinnerCategory;
+use App\Models\EventRegistrationWinner;
 use App\Models\Course;
 use App\Models\Enrollment;
 use Illuminate\Http\Request;
@@ -63,6 +65,8 @@ class CertificateController extends Controller
         $event->certificate_custom_template_tidak_lolos = $this->hydrateCustomTemplateAssets($event->certificate_custom_template_tidak_lolos);
         $event->certificate_custom_template_pemenang = $this->hydrateCustomTemplateAssets($event->certificate_custom_template_pemenang);
 
+        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+
         $eventRegistrations = EventRegistration::with(['user:id,name,email', 'team:id,name'])
             ->where('event_id', $event->id)
             ->get();
@@ -81,7 +85,45 @@ class CertificateController extends Controller
             ];
         })->values();
 
-        return view('admin.certificates.edit', compact('event', 'eventRegistrations', 'eventParticipants'));
+        // Load Winner Categories
+        $winnerCategories = $event->winnerCategories()
+            ->with(['winnerAssignments.registration.user', 'winnerAssignments.registration.team'])
+            ->get();
+
+        // If lomba and no categories exist yet, create a default first category for seamless transition
+        if ($isLomba && $winnerCategories->isEmpty()) {
+            $defaultCat = $event->winnerCategories()->create([
+                'name' => 'Kategori Juara Umum',
+                'certificate_template' => $event->certificate_template_pemenang ?: 'template_1',
+                'certificate_custom_template' => $event->certificate_custom_template_pemenang,
+                'certificate_logo' => $event->certificate_logo_pemenang,
+                'certificate_signature' => $event->certificate_signature_pemenang,
+                'file_tambahan' => $event->file_tambahan_pemenang,
+                'order' => 1,
+            ]);
+
+            // Migrate any existing winner registrations to this category
+            $existingWinners = EventRegistration::where('event_id', $event->id)->where('is_winner', true)->get();
+            foreach ($existingWinners as $ew) {
+                EventRegistrationWinner::firstOrCreate([
+                    'event_id' => $event->id,
+                    'event_registration_id' => $ew->id,
+                    'event_winner_category_id' => $defaultCat->id,
+                ], [
+                    'winner_title' => $ew->winner_title ?: 'Juara 1',
+                ]);
+            }
+
+            $winnerCategories = $event->winnerCategories()
+                ->with(['winnerAssignments.registration.user', 'winnerAssignments.registration.team'])
+                ->get();
+        }
+
+        foreach ($winnerCategories as $wCat) {
+            $wCat->certificate_custom_template = $this->hydrateCustomTemplateAssets($wCat->certificate_custom_template);
+        }
+
+        return view('admin.certificates.edit', compact('event', 'eventRegistrations', 'eventParticipants', 'winnerCategories'));
     }
 
     /**
@@ -278,35 +320,222 @@ class CertificateController extends Controller
                 $data['file_tambahan_pemenang'] = $request->file('file_tambahan_pemenang')->store('certificates', 'public');
             }
 
-            // Sync Winner Participants
-            $winnerIds = array_filter(array_map('intval', (array) $request->input('winner_registration_ids', [])));
-            $winnerTitles = (array) $request->input('winner_titles', []);
+            // ── Multi-Category Winner Sync & Processing ──
+            $categoryIds = array_filter(array_map('intval', (array) $request->input('winner_category_ids', [])));
+            $allAssignedWinnerRegIds = [];
 
-            // Reset registrations that are no longer winners
+            foreach ($categoryIds as $catId) {
+                $cat = EventWinnerCategory::where('event_id', $event->id)->find($catId);
+                if (!$cat) continue;
+
+                $catData = [];
+                if ($request->filled("category_name_{$catId}")) {
+                    $catData['name'] = trim($request->input("category_name_{$catId}"));
+                }
+                if ($request->filled("certificate_template_cat_{$catId}")) {
+                    $catData['certificate_template'] = $request->input("certificate_template_cat_{$catId}");
+                }
+
+                // Logos for this category
+                $existingCatLogos = is_array($cat->certificate_logo) ? $cat->certificate_logo : ($cat->certificate_logo ? [$cat->certificate_logo] : []);
+                if ($request->has("delete_logos_cat_{$catId}")) {
+                    foreach ((array)$request->input("delete_logos_cat_{$catId}") as $dLogo) {
+                        if (!empty($dLogo)) {
+                            Storage::disk('public')->delete(str_replace('storage/', '', $dLogo));
+                            $existingCatLogos = array_values(array_filter($existingCatLogos, fn($l) => $l !== $dLogo));
+                        }
+                    }
+                }
+                if ($request->hasFile("certificate_logo_cat_{$catId}")) {
+                    foreach ($request->file("certificate_logo_cat_{$catId}") as $f) {
+                        $existingCatLogos[] = $f->store('certificates', 'public');
+                    }
+                }
+                $catData['certificate_logo'] = array_values(array_unique($existingCatLogos));
+
+                // Signatures for this category
+                $catData['certificate_signature'] = $this->processSignatures(
+                    $request,
+                    $cat->certificate_signature,
+                    "delete_signatures_cat_{$catId}",
+                    "existing_signature_image_cat_{$catId}",
+                    "signature_name_cat_{$catId}",
+                    "signature_position_cat_{$catId}",
+                    "certificate_signature_file_cat_{$catId}"
+                );
+
+                // File tambahan for this category
+                if ($request->input("delete_file_tambahan_cat_{$catId}") == '1') {
+                    if ($cat->file_tambahan) {
+                        Storage::disk('public')->delete(str_replace('storage/', '', $cat->file_tambahan));
+                        $catData['file_tambahan'] = null;
+                    }
+                }
+                if ($request->hasFile("file_tambahan_cat_{$catId}")) {
+                    if ($cat->file_tambahan) {
+                        Storage::disk('public')->delete(str_replace('storage/', '', $cat->file_tambahan));
+                    }
+                    $catData['file_tambahan'] = $request->file("file_tambahan_cat_{$catId}")->store('certificates', 'public');
+                }
+
+                $cat->update($catData);
+
+                // Sync winner assignments for this category
+                $regIdsForCat = array_filter(array_map('intval', (array)$request->input("winner_registration_ids_cat_{$catId}", [])));
+                $titlesForCat = (array)$request->input("winner_titles_cat_{$catId}", []);
+
+                // Remove assignments no longer in this category
+                EventRegistrationWinner::where('event_id', $event->id)
+                    ->where('event_winner_category_id', $cat->id)
+                    ->whereNotIn('event_registration_id', $regIdsForCat)
+                    ->delete();
+
+                // Insert or update assignments for this category
+                foreach ($regIdsForCat as $rId) {
+                    $rawTitle = $titlesForCat[$rId] ?? $titlesForCat[(string)$rId] ?? '';
+                    $title = trim((string)$rawTitle);
+
+                    EventRegistrationWinner::updateOrCreate(
+                        [
+                            'event_id' => $event->id,
+                            'event_registration_id' => $rId,
+                            'event_winner_category_id' => $cat->id,
+                        ],
+                        [
+                            'winner_title' => $title ?: 'Juara 1',
+                        ]
+                    );
+
+                    $allAssignedWinnerRegIds[] = $rId;
+
+                    // Also mark registration as winner
+                    EventRegistration::where('event_id', $event->id)
+                        ->where('id', $rId)
+                        ->update([
+                            'is_winner' => true,
+                            'winner_title' => $title ?: 'Juara 1',
+                        ]);
+                }
+            }
+
+            // Sync fallback global winner IDs (for events without categories)
+            $legacyWinnerIds = array_filter(array_map('intval', (array) $request->input('winner_registration_ids', [])));
+            if (!empty($legacyWinnerIds)) {
+                $legacyWinnerTitles = (array) $request->input('winner_titles', []);
+                foreach ($legacyWinnerIds as $wId) {
+                    $rawTitle = $legacyWinnerTitles[$wId] ?? $legacyWinnerTitles[(string)$wId] ?? '';
+                    $title = trim((string) $rawTitle);
+                    EventRegistration::where('event_id', $event->id)
+                        ->where('id', $wId)
+                        ->update([
+                            'is_winner' => true,
+                            'winner_title' => $title ?: 'Pemenang',
+                        ]);
+                    $allAssignedWinnerRegIds[] = $wId;
+                }
+                $data['certificate_winner_ids'] = array_values(array_unique($legacyWinnerIds));
+            }
+
+            // Reset registrations that are NOT in any category or winner list
+            $allAssignedWinnerRegIds = array_values(array_unique($allAssignedWinnerRegIds));
             EventRegistration::where('event_id', $event->id)
                 ->where('is_winner', true)
-                ->whereNotIn('id', $winnerIds)
+                ->whereNotIn('id', $allAssignedWinnerRegIds)
                 ->update([
                     'is_winner' => false,
                     'winner_title' => null,
                 ]);
-
-            // Set selected winners and update their winner_title
-            foreach ($winnerIds as $wId) {
-                $rawTitle = $winnerTitles[$wId] ?? $winnerTitles[(string)$wId] ?? '';
-                $title = trim((string) $rawTitle);
-                EventRegistration::where('event_id', $event->id)
-                    ->where('id', $wId)
-                    ->update([
-                        'is_winner' => true,
-                        'winner_title' => $title ?: 'Pemenang',
-                    ]);
-            }
-            $data['certificate_winner_ids'] = array_values($winnerIds);
         }
 
         $event->update($data);
         return redirect()->route('admin.crm.certificates.index', ['tab' => 'events'])->with('success', 'Konfigurasi sertifikat event berhasil diperbarui!');
+    }
+
+    /**
+     * Store a new winner category for an event.
+     */
+    public function storeWinnerCategory(Request $request, Event $event)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+
+        $request->validate([
+            'name' => 'required|string|max:150',
+        ]);
+
+        $order = $event->winnerCategories()->count() + 1;
+        $category = $event->winnerCategories()->create([
+            'name' => trim($request->name),
+            'certificate_template' => 'template_1',
+            'order' => $order,
+        ]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Kategori pemenang berhasil ditambahkan.',
+                'category' => $category,
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Kategori pemenang \"{$category->name}\" berhasil ditambahkan.");
+    }
+
+    /**
+     * Update a winner category name.
+     */
+    public function updateWinnerCategory(Request $request, Event $event, EventWinnerCategory $category)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+        if ($category->event_id !== $event->id) abort(404);
+
+        $request->validate([
+            'name' => 'required|string|max:150',
+        ]);
+
+        $category->update([
+            'name' => trim($request->name),
+        ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Nama kategori berhasil diperbarui.',
+                'category' => $category,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Nama kategori berhasil diperbarui.');
+    }
+
+    /**
+     * Delete a winner category.
+     */
+    public function destroyWinnerCategory(Request $request, Event $event, EventWinnerCategory $category)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+        if ($category->event_id !== $event->id) abort(404);
+
+        $catName = $category->name;
+        if ($category->file_tambahan) {
+            Storage::disk('public')->delete(str_replace('storage/', '', $category->file_tambahan));
+        }
+
+        $category->delete();
+
+        // Check if any registrations still have other winner categories; update is_winner flag accordingly
+        $allRemainingWinnerRegIds = EventRegistrationWinner::where('event_id', $event->id)->pluck('event_registration_id')->unique()->toArray();
+        EventRegistration::where('event_id', $event->id)
+            ->whereNotIn('id', $allRemainingWinnerRegIds)
+            ->update(['is_winner' => false, 'winner_title' => null]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Kategori \"{$catName}\" berhasil dihapus.",
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Kategori \"{$catName}\" berhasil dihapus.");
     }
 
     /**
@@ -458,7 +687,7 @@ class CertificateController extends Controller
         return array_values(array_slice($newSigs, 0, 3));
     }
 
-    public function show(Event $event, $registration)
+    public function show(Request $request, Event $event, $registration)
     {
         if(!($registration instanceof EventRegistration)) {
             $registration = EventRegistration::findOrFail($registration);
@@ -475,9 +704,16 @@ class CertificateController extends Controller
             ]);
         }
         
-        $data = $this->getCertificateData($event, $registration->fresh());
+        $categoryId = $request->query('category_id') ? (int) $request->query('category_id') : null;
+        $data = $this->getCertificateData($event, $registration->fresh(), $categoryId);
         $data['certificateReady'] = $certificateReady;
         $data['registration'] = $registration;
+
+        // Fetch all winner assignments for this user so they can switch categories if they won multiple
+        $data['userWinnerAssignments'] = EventRegistrationWinner::with('category')
+            ->where('event_id', $event->id)
+            ->where('event_registration_id', $registration->id)
+            ->get();
 
         return view('events.certificate', $data);
     }
@@ -510,22 +746,10 @@ class CertificateController extends Controller
             ]);
         }
         
-        $data = $this->getCertificateData($event, $registration->fresh());
-        
-        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
-        $isLolos = strtolower(trim($registration->submission_status ?? '')) === 'lolos';
-        $isMenang = (bool) ($registration->is_winner ?? false);
-        if (!$isMenang && !empty($event->certificate_winner_ids) && is_array($event->certificate_winner_ids)) {
-            $isMenang = in_array((int)$registration->id, array_map('intval', $event->certificate_winner_ids), true);
-        }
+        $categoryId = $request->query('category_id') ? (int) $request->query('category_id') : null;
+        $data = $this->getCertificateData($event, $registration->fresh(), $categoryId);
 
-        if ($isMenang && !empty($event->certificate_custom_template_pemenang)) {
-            $customTpl = $event->certificate_custom_template_pemenang;
-        } elseif ($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos)) {
-            $customTpl = $event->certificate_custom_template_tidak_lolos;
-        } else {
-            $customTpl = $event->certificate_custom_template;
-        }
+        $customTpl = $data['activeCustomTemplate'] ?? null;
 
         // Gunakan template custom jika tersedia, otherwise gunakan template bawaan
         $viewName = !empty($customTpl)
@@ -537,7 +761,8 @@ class CertificateController extends Controller
         $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->render();
         
-        $filename = 'Sertifikat_'.Str::slug($event->title).'_'.Str::slug($registration->user->name).'.pdf';
+        $catSuffix = !empty($data['winnerCategoryName']) ? '_' . Str::slug($data['winnerCategoryName']) : '';
+        $filename = 'Sertifikat_'.Str::slug($event->title).'_'.Str::slug($registration->user->name).$catSuffix.'.pdf';
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => ($request->boolean('inline') ? 'inline' : 'attachment').'; filename="'.$filename.'"',
@@ -566,20 +791,7 @@ class CertificateController extends Controller
                 ]);
             }
             $data = $this->getCertificateData($event, $registration->fresh());
-            
-            $isLolos = strtolower(trim($registration->submission_status ?? '')) === 'lolos';
-            $isMenang = (bool) ($registration->is_winner ?? false);
-            if (!$isMenang && !empty($event->certificate_winner_ids) && is_array($event->certificate_winner_ids)) {
-                $isMenang = in_array((int)$registration->id, array_map('intval', $event->certificate_winner_ids), true);
-            }
-
-            if ($isMenang && !empty($event->certificate_custom_template_pemenang)) {
-                $customTpl = $event->certificate_custom_template_pemenang;
-            } elseif ($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos)) {
-                $customTpl = $event->certificate_custom_template_tidak_lolos;
-            } else {
-                $customTpl = $event->certificate_custom_template;
-            }
+            $customTpl = $data['activeCustomTemplate'] ?? null;
 
             $viewName = !empty($customTpl)
                 ? 'events.certificate-custom'
@@ -762,19 +974,43 @@ class CertificateController extends Controller
         return $dompdf;
     }
 
-    private function getCertificateData(Event $event, EventRegistration $registration)
+    private function getCertificateData(Event $event, EventRegistration $registration, ?int $categoryId = null)
     {
         $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
         $isLolos = strtolower(trim($registration->submission_status ?? '')) === 'lolos';
-        $isMenang = (bool) ($registration->is_winner ?? false);
+
+        // Check winner category assignments
+        $winnerAssignment = null;
+        if ($categoryId) {
+            $winnerAssignment = EventRegistrationWinner::with('category')
+                ->where('event_id', $event->id)
+                ->where('event_registration_id', $registration->id)
+                ->where('event_winner_category_id', $categoryId)
+                ->first();
+        }
+        if (!$winnerAssignment) {
+            $winnerAssignment = EventRegistrationWinner::with('category')
+                ->where('event_id', $event->id)
+                ->where('event_registration_id', $registration->id)
+                ->first();
+        }
+
+        $isMenang = (bool) ($registration->is_winner ?? false) || ($winnerAssignment !== null);
         if (!$isMenang && !empty($event->certificate_winner_ids) && is_array($event->certificate_winner_ids)) {
             $isMenang = in_array((int)$registration->id, array_map('intval', $event->certificate_winner_ids), true);
         }
-        $winnerTitle = $registration->winner_title ?: 'Pemenang';
+
+        $winnerCategory = $winnerAssignment ? $winnerAssignment->category : null;
+        $winnerCategoryName = $winnerCategory ? $winnerCategory->name : '';
+        $winnerTitle = ($winnerAssignment && !empty($winnerAssignment->winner_title)) 
+            ? $winnerAssignment->winner_title 
+            : ($registration->winner_title ?: 'Pemenang');
 
         // Tentukan template aktif
         $template = $event->certificate_template ?? 'template_1';
-        if ($isMenang && !empty($event->certificate_template_pemenang)) {
+        if ($winnerCategory && !empty($winnerCategory->certificate_template)) {
+            $template = $winnerCategory->certificate_template;
+        } elseif ($isMenang && !empty($event->certificate_template_pemenang)) {
             $template = $event->certificate_template_pemenang;
         } elseif ($isLomba && !$isLolos && !empty($event->certificate_template_tidak_lolos)) {
             $template = $event->certificate_template_tidak_lolos ?: $template;
@@ -782,7 +1018,9 @@ class CertificateController extends Controller
 
         // Tentukan logo aktif
         $logoField = $event->certificate_logo;
-        if ($isMenang && !empty($event->certificate_logo_pemenang)) {
+        if ($winnerCategory && !empty($winnerCategory->certificate_logo)) {
+            $logoField = $winnerCategory->certificate_logo;
+        } elseif ($isMenang && !empty($event->certificate_logo_pemenang)) {
             $logoField = $event->certificate_logo_pemenang;
         } elseif ($isLomba && !$isLolos && !empty($event->certificate_logo_tidak_lolos)) {
             $logoField = $event->certificate_logo_tidak_lolos;
@@ -802,7 +1040,9 @@ class CertificateController extends Controller
 
         // Tentukan signatures aktif
         $sigsRaw = $event->certificate_signature;
-        if ($isMenang && !empty($event->certificate_signature_pemenang)) {
+        if ($winnerCategory && !empty($winnerCategory->certificate_signature)) {
+            $sigsRaw = $winnerCategory->certificate_signature;
+        } elseif ($isMenang && !empty($event->certificate_signature_pemenang)) {
             $sigsRaw = $event->certificate_signature_pemenang;
         } elseif ($isLomba && !$isLolos && !empty($event->certificate_signature_tidak_lolos)) {
             $sigsRaw = $event->certificate_signature_tidak_lolos;
@@ -834,7 +1074,9 @@ class CertificateController extends Controller
 
         // Tentukan file tambahan aktif
         $fileTambahanRaw = $event->file_tambahan;
-        if ($isMenang && !empty($event->file_tambahan_pemenang)) {
+        if ($winnerCategory && !empty($winnerCategory->file_tambahan)) {
+            $fileTambahanRaw = $winnerCategory->file_tambahan;
+        } elseif ($isMenang && !empty($event->file_tambahan_pemenang)) {
             $fileTambahanRaw = $event->file_tambahan_pemenang;
         } elseif ($isLomba && !$isLolos && !empty($event->file_tambahan_tidak_lolos)) {
             $fileTambahanRaw = $event->file_tambahan_tidak_lolos;
@@ -850,23 +1092,40 @@ class CertificateController extends Controller
             }
         }
 
+        // Resolve custom template
+        $activeCustomTemplate = null;
+        if ($winnerCategory && !empty($winnerCategory->certificate_custom_template)) {
+            $activeCustomTemplate = $winnerCategory->certificate_custom_template;
+        } elseif ($isMenang && !empty($event->certificate_custom_template_pemenang)) {
+            $activeCustomTemplate = $event->certificate_custom_template_pemenang;
+        } elseif ($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos)) {
+            $activeCustomTemplate = $event->certificate_custom_template_tidak_lolos;
+        } else {
+            $activeCustomTemplate = $event->certificate_custom_template;
+        }
+
         return [
-            'event'            => $event,
-            'user'             => $registration->user,
-            'template'         => $template,
-            'isLomba'          => $isLomba,
-            'isLolos'          => $isLolos,
-            'isMenang'         => $isMenang,
-            'winnerTitle'      => $winnerTitle,
-            'issuedAt'         => $registration->certificate_issued_at ?? now(),
-            'certificateNumber'=> $registration->certificate_number,
-            'fileTambahanBase64'=> $fileTambahanBase64,
-            'logosBase64'      => $logosBase64,
-            'logosUrl'         => $logosUrl,
-            'signaturesBase64' => $signaturesBase64,
-            'signaturesData'   => $signaturesData,
+            'event'               => $event,
+            'user'                => $registration->user,
+            'template'            => $template,
+            'isLomba'             => $isLomba,
+            'isLolos'             => $isLolos,
+            'isMenang'            => $isMenang,
+            'winnerTitle'         => $winnerTitle,
+            'winnerCategory'      => $winnerCategory,
+            'winnerCategoryName'  => $winnerCategoryName,
+            'activeCustomTemplate'=> $activeCustomTemplate,
+            'issuedAt'            => $registration->certificate_issued_at ?? now(),
+            'certificateNumber'   => $registration->certificate_number,
+            'fileTambahanBase64'  => $fileTambahanBase64,
+            'logosBase64'         => $logosBase64,
+            'logosUrl'            => $logosUrl,
+            'signaturesData'      => $signaturesData,
+            'signaturesBase64'    => $signaturesBase64,
         ];
     }
+
+
 
     private function getCertificateDataCourse(Course $course, Enrollment $enrollment)
     {
@@ -1031,10 +1290,24 @@ class CertificateController extends Controller
             $type = 'tidak_lolos';
         }
 
+        $category = null;
         if ($type === 'pemenang') {
-            $rawLogos = $event->certificate_logo_pemenang ?: $event->certificate_logo;
-            $rawSigs = $event->certificate_signature_pemenang ?: $event->certificate_signature;
-            $customTemplate = $event->certificate_custom_template_pemenang;
+            if ($request->filled('category_id')) {
+                $category = $event->winnerCategories()->find($request->category_id);
+            }
+            if (!$category) {
+                $category = $event->winnerCategories()->first();
+            }
+
+            if ($category) {
+                $rawLogos = $category->certificate_logo ?: $event->certificate_logo;
+                $rawSigs = $category->certificate_signature ?: $event->certificate_signature;
+                $customTemplate = $category->certificate_custom_template;
+            } else {
+                $rawLogos = $event->certificate_logo_pemenang ?: $event->certificate_logo;
+                $rawSigs = $event->certificate_signature_pemenang ?: $event->certificate_signature;
+                $customTemplate = $event->certificate_custom_template_pemenang;
+            }
         } elseif ($type === 'tidak_lolos') {
             $rawLogos = $event->certificate_logo_tidak_lolos ?: $event->certificate_logo;
             $rawSigs = $event->certificate_signature_tidak_lolos ?: $event->certificate_signature;
@@ -1071,7 +1344,7 @@ class CertificateController extends Controller
 
         $customTemplate = $this->hydrateCustomTemplateAssets($customTemplate);
 
-        return view('admin.certificates.template_builder', compact('event', 'existingLogos', 'existingSigs', 'customTemplate', 'type'));
+        return view('admin.certificates.template_builder', compact('event', 'existingLogos', 'existingSigs', 'customTemplate', 'type', 'category'));
     }
 
     /**
@@ -1081,24 +1354,18 @@ class CertificateController extends Controller
     {
         if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
 
-        $validated = $request->validate([
-            'template_json' => 'required|string',
-            'type'          => 'nullable|string|in:lolos,tidak_lolos,pemenang',
-        ]);
+        $rawJson = $request->input('template_json') ?? $request->input('template_data');
+        if (empty($rawJson) || !is_string($rawJson)) {
+            return response()->json(['error' => 'Data template wajib diisi'], 422);
+        }
 
-        $templateData = json_decode($validated['template_json'], true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        $templateData = json_decode($rawJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($templateData)) {
             return response()->json(['error' => 'JSON tidak valid'], 422);
         }
 
         $type = $request->input('type', 'lolos');
-        if ($type === 'pemenang') {
-            $field = 'certificate_custom_template_pemenang';
-        } elseif ($type === 'tidak_lolos') {
-            $field = 'certificate_custom_template_tidak_lolos';
-        } else {
-            $field = 'certificate_custom_template';
-        }
+        $categoryId = $request->input('category_id');
 
         // Strip heavy base64 strings from elements that already have a file path (src) to keep database lightweight
         if (isset($templateData['elements']) && is_array($templateData['elements'])) {
@@ -1108,6 +1375,26 @@ class CertificateController extends Controller
                 }
             }
             unset($el);
+        }
+
+        if ($type === 'pemenang' && $categoryId) {
+            $category = $event->winnerCategories()->find($categoryId);
+            if ($category) {
+                $category->update(['certificate_custom_template' => $templateData]);
+                if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
+                    return response()->json(['success' => true, 'message' => "Template custom kategori \"{$category->name}\" berhasil disimpan!"]);
+                }
+                return redirect()->route('admin.crm.certificates.edit', $event)
+                    ->with('success', "Template custom kategori \"{$category->name}\" berhasil disimpan!");
+            }
+        }
+
+        if ($type === 'pemenang') {
+            $field = 'certificate_custom_template_pemenang';
+        } elseif ($type === 'tidak_lolos') {
+            $field = 'certificate_custom_template_tidak_lolos';
+        } else {
+            $field = 'certificate_custom_template';
         }
 
         $event->update([$field => $templateData]);
@@ -1127,6 +1414,17 @@ class CertificateController extends Controller
     {
         if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
         $type = $request->input('type', 'lolos');
+        $categoryId = $request->input('category_id');
+
+        if ($type === 'pemenang' && $categoryId) {
+            $category = $event->winnerCategories()->find($categoryId);
+            if ($category) {
+                $category->update(['certificate_custom_template' => null]);
+                return redirect()->route('admin.crm.certificates.edit', $event)
+                    ->with('success', "Template custom kategori \"{$category->name}\" telah dihapus.");
+            }
+        }
+
         if ($type === 'pemenang') {
             $field = 'certificate_custom_template_pemenang';
         } elseif ($type === 'tidak_lolos') {

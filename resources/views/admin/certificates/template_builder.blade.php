@@ -228,7 +228,9 @@
                 @elseif(isset($type) && $type === 'lolos' && strtolower(trim($event->jenis ?? '')) === 'lomba')
                     <span class="badge bg-success text-uppercase fw-bold" style="font-size: 0.65rem;">Peserta Lolos</span>
                 @elseif(isset($type) && $type === 'pemenang')
-                    <span class="badge bg-warning text-dark text-uppercase fw-bold" style="font-size: 0.65rem;"><i class="bi bi-trophy-fill me-1"></i> Peserta Pemenang</span>
+                    <span class="badge bg-warning text-dark text-uppercase fw-bold" style="font-size: 0.65rem;">
+                        <i class="bi bi-trophy-fill me-1"></i> Pemenang{{ isset($category) ? ': ' . $category->name : '' }}
+                    </span>
                 @endif
             </div>
             <small class="text-muted">{{ $event ? 'Event: ' . $event->title : 'Course: ' . $course->name }}</small>
@@ -268,6 +270,7 @@
                 <div class="placeholder-pill" onclick="addVariableElement('@{{tanggal}}', 'Helvetica', 12, '#475569')">Tanggal Terbit</div>
                 <div class="placeholder-pill" onclick="addVariableElement('@{{nomor_sertifikat}}', 'Courier New', 11, '#94a3b8')">No. Sertifikat</div>
                 <div class="placeholder-pill" style="background:#fef3c7; border-color:#fde68a; color:#92400e;" onclick="addVariableElement('@{{juara}}', 'Helvetica', 16, '#b45309', true)">🏆 Predikat Juara (@{{juara}})</div>
+                <div class="placeholder-pill" style="background:#fef3c7; border-color:#fde68a; color:#92400e;" onclick="addVariableElement('@{{kategori}}', 'Helvetica', 14, '#b45309', true)">🏷️ Kategori (@{{kategori}})</div>
             </div>
             
             <div class="mt-4 mb-3">
@@ -549,6 +552,9 @@
     <input type="hidden" name="template_json" id="template_json_field">
     @if(isset($type))
     <input type="hidden" name="type" value="{{ $type }}">
+    @endif
+    @if(isset($category))
+    <input type="hidden" name="category_id" value="{{ $category->id }}">
     @endif
 </form>
 
@@ -1647,7 +1653,7 @@
             if (data && data.success) {
                 Swal.fire('Berhasil!', data.message || 'Template berhasil disimpan!', 'success').then(() => {
                     // Navigate back
-                    window.location.href = "{{ $event ? route('admin.crm.certificates.edit', $event) : route('admin.crm.certificates.edit-course', $course) }}";
+                    window.location.href = "{{ $event ? (route('admin.crm.certificates.edit', $event) . ((isset($type) && $type === 'pemenang') ? '#pemenang' : '')) : route('admin.crm.certificates.edit-course', $course) }}";
                 });
             } else {
                 Swal.fire('Error', (data && (data.error || data.message)) || 'Gagal menyimpan template', 'error');
@@ -1764,7 +1770,8 @@
                 .replace(/\{\{nomor_sertifikat\}\}/g, certNo)
                 .replace(/\{\{juara\}\}/g, 'Juara 1 - Winner')
                 .replace(/\{\{predikat\}\}/g, 'Juara 1 - Winner')
-                .replace(/\{\{pemenang\}\}/g, 'Juara 1 - Winner');
+                .replace(/\{\{pemenang\}\}/g, 'Juara 1 - Winner')
+                .replace(/\{\{kategori\}\}/g, @json(isset($category) ? $category->name : 'Kategori Pemenang'));
         }
 
         templateState.elements.forEach(el => {

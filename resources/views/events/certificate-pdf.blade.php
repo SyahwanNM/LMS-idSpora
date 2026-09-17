@@ -1,9 +1,14 @@
 @php
     $isLomba = $isLomba ?? (strtolower(trim($event->jenis ?? '')) === 'lomba');
     $isLolos = $isLolos ?? (strtolower(trim($registration->submission_status ?? '')) === 'lolos');
-    $activeCustom = $customTemplate ?? (($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
-        ? $event->certificate_custom_template_tidak_lolos
-        : $event->certificate_custom_template);
+    $isMenang = $isMenang ?? false;
+    $activeCustom = $customTemplate ?? $activeCustomTemplate ?? (
+        ($isMenang && !empty($event->certificate_custom_template_pemenang))
+            ? $event->certificate_custom_template_pemenang
+            : (($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
+                ? $event->certificate_custom_template_tidak_lolos
+                : $event->certificate_custom_template)
+    );
 
     if (!empty($activeCustom)) {
         echo view('events.certificate-custom', array_merge(get_defined_vars(), ['is_preview' => $is_preview ?? false, 'customTemplate' => $activeCustom]))->render();
@@ -479,7 +484,7 @@
 
                 <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Atas Partisipasinya Sebagai</p>
                 <p style="font-size: 13pt; font-weight: bold; margin: 1mm 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">
-                    {{ $isMenang ? strtoupper($winnerTitle ?? 'PESERTA PEMENANG') : ($isLomba ? ($isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA') }}
+                    {{ $isMenang ? strtoupper($winnerTitle ?? 'PESERTA PEMENANG') . (!empty($winnerCategoryName) ? ' - ' . strtoupper($winnerCategoryName) : '') : ($isLomba ? ($isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA') }}
                 </p>
                 <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
                     {{ $isLomba ? 'Dalam Kegiatan Kompetisi' : 'Dalam Kegiatan Workshop' }}
@@ -695,7 +700,7 @@
                 <p style="font-size: 14pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This certificate is proudly presented to</p>
                 <div class="recipient-name">{{ strtoupper($user->name) }}</div>
                 <p style="font-size: 12pt; color: #1e293b; margin-top: 10px;">
-                    {{ $isMenang ? 'telah berhasil meraih predikat juara dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'for exceptional completion of the professional program') }}
+                    {{ $isMenang ? 'telah berhasil meraih predikat ' . ($winnerTitle ?? 'Juara') . (!empty($winnerCategoryName) ? ' (' . $winnerCategoryName . ')' : '') . ' dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'for exceptional completion of the professional program') }}
                 </p>
                 <h2 style="font-size: 24pt; color: #1e1b4b; margin: 10px 0; font-family: 'Georgia', serif;">"{{ $event->title }}"</h2>
                 <p style="font-size: 11pt; color: #64748b;">Issued by IdSPora Authority on {{ $event->event_date?->format('d F Y') }}</p>
@@ -740,7 +745,7 @@
 
                             @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
                             @foreach(array_slice($logosToRender, 0, 3) as $logo)
-                                <img src="{{ $logo }}" class="logo-item">
+                                <img src="{{ $logo }}" class="logo-item" style="height: 50px;">
                             @endforeach
                         </div>
                     </div>
@@ -758,7 +763,7 @@
                     <div class="recipient-name">{{ strtoupper($user->name) }}</div>
                 @endif
                 <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;">
-                    {{ $isMenang ? 'telah berhasil meraih predikat juara dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program') }}
+                    {{ $isMenang ? 'telah berhasil meraih predikat ' . ($winnerTitle ?? 'Juara') . (!empty($winnerCategoryName) ? ' (' . $winnerCategoryName . ')' : '') . ' dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program') }}
                 </p>
                 <h2 style="font-size: 26pt; color: #1e1b4b; margin: 15px 0; font-family: 'Georgia', serif;">"{{ $event->title }}"</h2>
                 <p style="font-size: 12pt; color: #64748b;">Issued on {{ $issuedAt->format('d F Y') }} by idSpora Team</p>

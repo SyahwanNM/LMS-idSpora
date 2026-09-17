@@ -751,4 +751,14 @@ class Event extends Model
             'certifiable'
         )->orderBy('order_no');
     }
+
+    public function winnerCategories()
+    {
+        return $this->hasMany(EventWinnerCategory::class)->orderBy('order')->orderBy('id');
+    }
+
+    public function registrationWinners()
+    {
+        return $this->hasMany(EventRegistrationWinner::class);
+    }
 }
