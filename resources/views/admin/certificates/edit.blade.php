@@ -55,6 +55,37 @@
         border-color: rgba(100,116,139,0.3);
         color: #334155;
     }
+    .cert-section-nav-btn.active.is-pemenang {
+        border-color: rgba(245,158,11,0.4);
+        color: #b45309;
+        background: #fffdf5;
+    }
+
+    .winner-card-item {
+        background: #ffffff;
+        border: 1.5px solid #fde68a;
+        border-radius: 12px;
+        padding: 12px 14px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(245, 158, 11, 0.05);
+    }
+    .winner-card-item:hover {
+        border-color: #f59e0b;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12);
+    }
+    .winner-search-result-item {
+        padding: 9px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .winner-search-result-item:last-child {
+        border-bottom: none;
+    }
+    .winner-search-result-item:hover {
+        background: #fffbeb;
+    }
 
     .preview-switcher-btn {
         font-size: 0.72rem;
@@ -471,6 +502,23 @@
 
     $logosTidakLolos = is_array($event->certificate_logo_tidak_lolos) ? $event->certificate_logo_tidak_lolos : ($event->certificate_logo_tidak_lolos ? [$event->certificate_logo_tidak_lolos] : []);
     $sigsTidakLolos = is_array($event->certificate_signature_tidak_lolos) ? $event->certificate_signature_tidak_lolos : ($event->certificate_signature_tidak_lolos ? [$event->certificate_signature_tidak_lolos] : []);
+
+    $logosPemenang = is_array($event->certificate_logo_pemenang) ? $event->certificate_logo_pemenang : ($event->certificate_logo_pemenang ? [$event->certificate_logo_pemenang] : []);
+    $sigsPemenang = is_array($event->certificate_signature_pemenang) ? $event->certificate_signature_pemenang : ($event->certificate_signature_pemenang ? [$event->certificate_signature_pemenang] : []);
+
+    $eventParticipants = $eventParticipants ?? ($eventRegistrations ?? collect())->map(function($r) {
+        $name = $r->user->name ?? $r->full_name ?? ('Peserta #' . $r->id);
+        $email = $r->user->email ?? '-';
+        $team = $r->team->name ?? $r->team_name ?? null;
+        return [
+            'id' => (int)$r->id,
+            'name' => (string)$name,
+            'email' => (string)$email,
+            'team' => $team ? (string)$team : null,
+            'is_winner' => (bool)$r->is_winner,
+            'winner_title' => (string)($r->winner_title ?? 'Juara 1')
+        ];
+    })->values();
 @endphp
 
 <div class="crm-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
@@ -480,7 +528,7 @@
             <h1 style="font-size:1.5rem;font-weight:800;color:var(--crm-navy);letter-spacing:-0.8px;margin:0;">Konfigurasi Sertifikat Event</h1>
             @if($isLomba)
                 <span class="badge" style="background:rgba(234,179,8,0.15);color:#b45309;font-weight:800;font-size:0.75rem;padding:6px 12px;border-radius:8px;">
-                    🏆 Tipe Event: Lomba (2 Sertifikat)
+                    🏆 Tipe Event: Lomba (3 Kategori Sertifikat)
                 </span>
             @endif
         </div>
@@ -517,15 +565,19 @@
         <div class="col-lg-6">
 
             @if($isLomba)
-                <!-- Lomba Dual Section Switcher -->
+                <!-- Lomba 3-Section Switcher -->
                 <div class="cert-section-nav">
                     <button type="button" class="cert-section-nav-btn is-lolos active" data-section="lolos" onclick="switchSection('lolos')">
-                        <i class="bi bi-trophy-fill text-success"></i>
-                        <span>Sertifikat Peserta Lolos</span>
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <span>Peserta Lolos</span>
                     </button>
                     <button type="button" class="cert-section-nav-btn is-tidak-lolos" data-section="tidak_lolos" onclick="switchSection('tidak_lolos')">
                         <i class="bi bi-award text-secondary"></i>
-                        <span>Sertifikat Peserta Tidak Lolos</span>
+                        <span>Peserta Tidak Lolos</span>
+                    </button>
+                    <button type="button" class="cert-section-nav-btn is-pemenang" data-section="pemenang" onclick="switchSection('pemenang')">
+                        <i class="bi bi-trophy-fill text-warning"></i>
+                        <span>Peserta Pemenang</span>
                     </button>
                 </div>
             @endif
@@ -916,6 +968,238 @@
                     </div>
                 </div>
             </div>
+
+            {{-- SECTION 3: PEMENANG (WINNERS) --}}
+            <div id="pane-pemenang" class="cert-pane" style="display: none;">
+                <div class="p-3 mb-3 rounded-3" style="background:#fffbeb; border: 1px solid #fde68a;">
+                    <div class="fw-800 text-warning small"><i class="bi bi-trophy-fill me-1"></i> Desain Sertifikat: Peserta Pemenang (Juara)</div>
+                    <div class="text-muted" style="font-size:0.75rem;">Cari dan pilih peserta pemenang dari pendaftar event, lalu atur predikat juara, template sertifikat, logo, dan tanda tangan khusus pemenang.</div>
+                </div>
+
+                {{-- Step 1 (Pemenang): Pilih Peserta Pemenang --}}
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div style="width:24px;height:24px;border-radius:6px;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">1. Cari &amp; Pilih Peserta Pemenang</h6>
+                    </div>
+                    <p class="text-muted" style="font-size:0.75rem; margin-top:-4px; margin-bottom:12px;">
+                        Ketik nama peserta, email, atau nama tim terdaftar untuk menambahkan sebagai pemenang. Anda dapat memilih lebih dari satu pemenang serta menentukan predikat juaranya (misal: "Juara 1", "Juara 2", "Juara Favorit").
+                    </p>
+
+                    <!-- Search Input -->
+                    <div class="position-relative mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0" style="border-radius:10px 0 0 10px;">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" id="winner-search-input" class="form-control border-start-0" placeholder="Ketik nama peserta, email, atau nama tim..." style="border-radius:0 10px 10px 0; font-size:0.85rem;" autocomplete="off" oninput="filterWinnerParticipants(this.value)" onfocus="filterWinnerParticipants(this.value)">
+                        </div>
+                        <!-- Live Search Results Dropdown -->
+                        <div id="winner-search-results" class="position-absolute w-100 bg-white border rounded-3 shadow-lg mt-1 p-2" style="display:none; z-index:1050; max-height:260px; overflow-y:auto;">
+                        </div>
+                    </div>
+
+                    <!-- Selected Winners List -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-field-label mb-0">Daftar Pemenang Terpilih (<span id="winner-count-label">0</span>)</label>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size:0.68rem; font-weight:700;">Multi-Pemenang Aktif</span>
+                    </div>
+
+                    <div id="selected-winners-container" class="d-flex flex-column gap-2 mb-2">
+                        <!-- Populated by JavaScript -->
+                    </div>
+
+                    <div id="winner-empty-state" class="text-center py-3 px-2 text-muted rounded-3 border border-dashed" style="background:#fdfcf9; border-color:#fed7aa; font-size:0.78rem;">
+                        <i class="bi bi-info-circle text-warning me-1"></i> Belum ada peserta yang dipilih sebagai pemenang. Gunakan pencarian di atas untuk menambahkan pemenang event ini.
+                    </div>
+                </div>
+
+                {{-- Step 2 (Pemenang): Pilih Template Desain --}}
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <div style="width:24px;height:24px;border-radius:6px;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">2</div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Pilih Template Desain (Peserta Pemenang)</h6>
+                    </div>
+                    
+                    <div class="row g-3 template-card-container">
+                        @if(!empty($event->certificate_custom_template_pemenang))
+                        <div class="col-12">
+                            <div class="template-card template-card-pemenang active" id="card-custom-pemenang" onclick="selectCustomTemplate('pemenang')" style="border-color: #f59e0b; background: #fffbeb;">
+                                <div class="check-icon" style="background: #f59e0b; display: flex;"><i class="bi bi-check"></i></div>
+                                <div class="d-flex align-items-center p-3 gap-3">
+                                    <div style="width:46px; height:46px; border-radius:12px; background:#f59e0b; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">
+                                        <i class="bi bi-trophy-fill"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="font-weight:800; font-size:0.88rem; color:#92400e;">Template Custom Builder Pemenang (Aktif)</div>
+                                            <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Sedang Digunakan</span>
+                                        </div>
+                                        <div style="font-size:0.72rem; color:#b45309; margin-top:2px;">Template sertifikat visual khusus hasil rancangan dari Visual Builder untuk pemenang.</div>
+                                    </div>
+                                    <div>
+                                        <a href="{{ route('admin.crm.certificates.template-builder', ['event' => $event, 'type' => 'pemenang']) }}" class="btn btn-sm btn-warning text-dark fw-bold px-3" style="font-size:0.75rem; border-radius:8px;">
+                                            <i class="bi bi-pencil-square me-1"></i> Edit Builder
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        @foreach($tpls as $t)
+                        <div class="col-md-6">
+                            <div class="template-card template-card-pemenang {{ (empty($event->certificate_custom_template_pemenang) && ($event->certificate_template_pemenang ?? 'template_1') == $t['id']) ? 'active' : '' }}" onclick="selectTemplate('{{ $t['id'] }}', this, 'pemenang')">
+                                <div class="check-icon"><i class="bi bi-check"></i></div>
+                                <div class="template-preview" style="background:{{ $t['bg'] }}; color:{{ $t['color'] ?? '#fff' }};">
+                                    <i class="bi {{ $t['icon'] }}"></i>
+                                </div>
+                                <div class="p-3">
+                                    <div style="font-weight:700;font-size:0.85rem;color:var(--crm-navy);">{{ $t['name'] }}</div>
+                                    <div style="font-size:0.7rem;color:var(--crm-text-subtle);line-height:1.4;margin-top:2px;">{{ $t['desc'] }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="certificate_template_pemenang" id="selected_template_pemenang" value="{{ $event->certificate_template_pemenang ?? 'template_1' }}">
+                    
+                    <div class="d-flex mt-4 justify-content-between align-items-center mb-2">
+                        <label class="form-field-label mb-0">File Tambahan Pemenang (Halaman Kedua)</label>
+                    </div>
+                    <div class="mb-3">
+                        @if(!empty($event->file_tambahan_pemenang))
+                            <div class="mb-2 position-relative d-inline-block" style="width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);" id="existing-file-tambahan-pemenang-container">
+                                <img src="{{ asset('uploads/' . str_replace('storage/', '', $event->file_tambahan_pemenang)) }}" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="File Tambahan Pemenang">
+                                <label class="position-absolute d-flex align-items-center justify-content-center" style="top:5px; right:5px; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:6px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Hapus File Tambahan Pemenang">
+                                    <input type="checkbox" name="delete_file_tambahan_pemenang" value="1" class="d-none" onchange="document.getElementById('existing-file-tambahan-pemenang-container').style.opacity = this.checked ? '0.3' : '1';">
+                                    <i class="bi bi-trash text-danger" style="font-size:0.75rem;"></i>
+                                </label>
+                            </div>
+                        @endif
+                        <div class="mb-2 d-none position-relative" id="new-file-tambahan-pemenang-preview" style="width: 120px; height: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);">
+                            <img id="new-file-tambahan-pemenang-img" src="" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="New File Tambahan Pemenang">
+                            <span class="position-absolute badge bg-primary" style="bottom: 5px; right: 5px;">Baru</span>
+                        </div>
+                        <input type="file" accept="image/*" name="file_tambahan_pemenang" class="form-field mb-2" onchange="if(this.files && this.files[0]) { let reader = new FileReader(); reader.onload = function(e) { document.getElementById('new-file-tambahan-pemenang-img').src = e.target.result; document.getElementById('new-file-tambahan-pemenang-preview').classList.remove('d-none'); document.getElementById('new-file-tambahan-pemenang-preview').classList.add('d-inline-block'); }; reader.readAsDataURL(this.files[0]); } else { document.getElementById('new-file-tambahan-pemenang-preview').classList.add('d-none'); document.getElementById('new-file-tambahan-pemenang-preview').classList.remove('d-inline-block'); }">
+                        <small class="text-muted d-block mt-1">Opsional. File ini akan digabungkan di halaman kedua PDF sertifikat pemenang.</small>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-4 bg-light border d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold text-dark small"><i class="bi bi-magic me-1 text-warning"></i> Custom Template Builder (Pemenang)</div>
+                            <div class="text-muted" style="font-size:0.75rem;">Buat template visual custom khusus untuk sertifikat peserta pemenang dengan drag &amp; drop.</div>
+                        </div>
+                        <a href="{{ route('admin.crm.certificates.template-builder', ['event' => $event, 'type' => 'pemenang']) }}" class="btn btn-sm btn-warning text-dark fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
+                            Buka Builder
+                        </a>
+                    </div>
+
+                    @if(!empty($event->certificate_custom_template_pemenang))
+                    <div class="mt-3 p-3 rounded-4 border d-flex justify-content-between align-items-center" style="background:#fffdf5; border-color:#fde68a;">
+                        <div>
+                            <div class="fw-bold text-warning small"><i class="bi bi-patch-check-fill me-1"></i> Menggunakan Template Custom Pemenang</div>
+                            <div class="text-muted" style="font-size:0.75rem;">Template custom aktif untuk sertifikat peserta pemenang.</div>
+                        </div>
+                        <button type="submit" form="reset-custom-form-pemenang" class="btn btn-sm btn-outline-danger fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
+                            Hapus Custom
+                        </button>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Step 3 (Pemenang): Kelola Aset Visual --}}
+                <div class="card-minimal p-4 mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <div style="width:24px;height:24px;border-radius:6px;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">3</div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--crm-navy);">Kelola Aset Visual (Peserta Pemenang)</h6>
+                    </div>
+
+                    <div class="row g-4">
+                        {{-- Logos Pemenang --}}
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-field-label mb-0">Logo Partner Pemenang</label>
+                                <button type="button" id="addLogoBtn_pemenang" onclick="addLogoField('pemenang')" class="btn btn-sm fw-700" style="font-size:0.65rem;color:var(--crm-primary);background:rgba(124,58,237,0.08);border-radius:6px;padding:3px 10px;">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah Baris
+                                </button>
+                            </div>
+                            <div id="logoUploadContainer_pemenang" class="mb-3">
+                                <input type="file" name="certificate_logo_pemenang[]" class="form-field mb-2 logo-file-input" accept="image/*" onchange="onLogoFileChange(this, 'init_pemenang_0', 'pemenang')">
+                            </div>
+                            
+                            <div id="existingLogos_pemenang" class="d-flex flex-wrap gap-3">
+                                @foreach($logosPemenang as $logo)
+                                    <div class="asset-item">
+                                        <img src="{{ asset('uploads/' . $logo) }}" style="height:40px;object-fit:contain;">
+                                        <div class="asset-delete" onclick="markDelete('logo', '{{ $logo }}', this, event, 'pemenang')"><i class="bi bi-x"></i></div>
+                                        <input type="hidden" name="delete_logos_pemenang[]" value="" class="delete-logo-input-pemenang">
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <hr style="border-color:var(--crm-border-soft);margin:0.5rem 0;">
+
+                        {{-- Signatures Pemenang --}}
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-field-label mb-0">Tanda Tangan Digital Pemenang</label>
+                                <button type="button" id="addSigBtn_pemenang" onclick="addSignatureField('pemenang')" class="btn btn-sm fw-700" style="font-size:0.65rem;color:var(--crm-primary);background:rgba(124,58,237,0.08);border-radius:6px;padding:3px 10px;">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah TTD
+                                </button>
+                            </div>
+
+                            <div id="signaturesContainer_pemenang">
+                                @foreach($sigsPemenang as $i => $sig)
+                                    @php
+                                        $isObj = is_array($sig);
+                                        $sigPath = $isObj ? ($sig['image'] ?? '') : $sig;
+                                        $sigName = $isObj ? ($sig['name'] ?? '') : '';
+                                        $sigPos  = $isObj ? ($sig['position'] ?? '') : '';
+                                    @endphp
+                                    <div class="sig-entry">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-field-label">Gambar TTD <span class="text-danger">*</span></label>
+                                                @if($sigPath)
+                                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                                        <img src="{{ asset('uploads/' . $sigPath) }}" style="height:45px;background:#fff;padding:4px;border-radius:6px;border:1px solid var(--crm-border);object-fit:contain;">
+                                                        <label style="font-size:0.75rem;font-weight:700;color:var(--crm-primary);cursor:pointer;">
+                                                            <input type="checkbox" name="replace_sig_pemenang_{{ $i }}" value="1" style="display:none;" class="sig-replace-checkbox" onchange="toggleSigReplace(this, {{ $i }}, 'pemenang')">
+                                                            Ganti Gambar
+                                                        </label>
+                                                    </div>
+                                                    <input type="hidden" name="existing_signature_image_pemenang[{{ $i }}]" value="{{ $sigPath }}" class="existing-sig-path">
+                                                    <div id="sig_file_pemenang_{{ $i }}" style="display:none;">
+                                                        <input type="file" name="certificate_signature_file_pemenang[{{ $i }}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, {{ $i }}, 'pemenang')">
+                                                    </div>
+                                                @else
+                                                    <input type="file" name="certificate_signature_file_pemenang[{{ $i }}]" class="form-field sig-file-input" accept="image/*" onchange="onSigFileChange(this, {{ $i }}, 'pemenang')">
+                                                @endif
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-field-label">Nama Penandatangan</label>
+                                                <input type="text" name="signature_name_pemenang[{{ $i }}]" value="{{ $sigName }}" class="form-field sig-name-input" placeholder="cth: Dr. Ahmad Fauzi" onkeyup="renderPreview()">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <label class="form-field-label mb-0">Jabatan</label>
+                                                    <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-700" style="font-size:0.65rem;" onclick="removeSigEntry(this, '{{ $sigPath }}', event, 'pemenang')">Hapus</button>
+                                                </div>
+                                                <input type="text" name="signature_position_pemenang[{{ $i }}]" value="{{ $sigPos }}" class="form-field sig-pos-input" placeholder="cth: Ketua Juri Lomba" onkeyup="renderPreview()">
+                                                <input type="hidden" name="delete_signatures_pemenang[]" value="" class="delete-sig-input-pemenang">
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             @endif
 
             <div class="d-flex justify-content-end mb-4">
@@ -953,10 +1237,13 @@
                         <!-- Preview Switcher -->
                         <div class="d-flex gap-1">
                             <button type="button" class="preview-switcher-btn active" data-section="lolos" onclick="switchSection('lolos')">
-                                <i class="bi bi-trophy-fill text-success me-1"></i>Lolos
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>Lolos
                             </button>
                             <button type="button" class="preview-switcher-btn" data-section="tidak_lolos" onclick="switchSection('tidak_lolos')">
                                 <i class="bi bi-award text-secondary me-1"></i>Tidak Lolos
+                            </button>
+                            <button type="button" class="preview-switcher-btn is-pemenang" data-section="pemenang" onclick="switchSection('pemenang')">
+                                <i class="bi bi-trophy-fill text-warning me-1"></i>Pemenang
                             </button>
                         </div>
                         @endif
@@ -1149,30 +1436,217 @@
     <input type="hidden" name="type" value="tidak_lolos">
 </form>
 @endif
+
+@if(!empty($event->certificate_custom_template_pemenang))
+<form id="reset-custom-form-pemenang" action="{{ route('admin.crm.certificates.reset-custom-template', $event) }}" method="POST" style="display:none;" onsubmit="return confirm('Hapus template custom pemenang dan kembali ke template standar?')">
+    @csrf
+    <input type="hidden" name="type" value="pemenang">
+</form>
+@endif
 @endsection
 
 @section('scripts')
 <script>
     const isLomba = {{ $isLomba ? 'true' : 'false' }};
-    let currentSection = 'lolos'; // 'lolos' or 'tidak_lolos'
+    let currentSection = 'lolos'; // 'lolos', 'tidak_lolos', or 'pemenang'
 
     // Custom templates from backend
     const customTemplates = {
         lolos: @json($event->certificate_custom_template),
-        tidak_lolos: @json($event->certificate_custom_template_tidak_lolos)
+        tidak_lolos: @json($event->certificate_custom_template_tidak_lolos),
+        pemenang: @json($event->certificate_custom_template_pemenang)
     };
 
     // Active preview mode for each section: 'custom' (if exists) or 'standard'
     let previewMode = {
         lolos: (customTemplates.lolos && customTemplates.lolos.elements && customTemplates.lolos.elements.length > 0) ? 'custom' : 'standard',
-        tidak_lolos: (customTemplates.tidak_lolos && customTemplates.tidak_lolos.elements && customTemplates.tidak_lolos.elements.length > 0) ? 'custom' : 'standard'
+        tidak_lolos: (customTemplates.tidak_lolos && customTemplates.tidak_lolos.elements && customTemplates.tidak_lolos.elements.length > 0) ? 'custom' : 'standard',
+        pemenang: (customTemplates.pemenang && customTemplates.pemenang.elements && customTemplates.pemenang.elements.length > 0) ? 'custom' : 'standard'
     };
 
     // Global data stores for preview assets
     const uploadedFiles = {
         lolos: { logos: {}, signatures: {} },
-        tidak_lolos: { logos: {}, signatures: {} }
+        tidak_lolos: { logos: {}, signatures: {} },
+        pemenang: { logos: {}, signatures: {} }
     };
+
+    // ── Event Participants & Multi-Winner State ──
+    const eventParticipants = {!! json_encode($eventParticipants ?? []) !!};
+
+    let selectedWinners = {};
+    eventParticipants.forEach(p => {
+        if (p.is_winner) {
+            selectedWinners[p.id] = {
+                id: p.id,
+                name: p.name,
+                email: p.email,
+                team: p.team,
+                winner_title: p.winner_title || 'Juara 1'
+            };
+        }
+    });
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function filterWinnerParticipants(query) {
+        const resultsContainer = document.getElementById('winner-search-results');
+        if (!resultsContainer) return;
+
+        const q = (query || '').trim().toLowerCase();
+        let matches = [];
+
+        if (!q) {
+            matches = eventParticipants.slice(0, 8);
+        } else {
+            matches = eventParticipants.filter(p => {
+                const nameMatch = p.name.toLowerCase().includes(q);
+                const emailMatch = p.email.toLowerCase().includes(q);
+                const teamMatch = p.team && p.team.toLowerCase().includes(q);
+                return nameMatch || emailMatch || teamMatch;
+            }).slice(0, 15);
+        }
+
+        if (matches.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="p-3 text-center text-muted" style="font-size:0.78rem;">
+                    <i class="bi bi-person-x me-1"></i> Tidak ditemukan peserta yang cocok dengan kata kunci.
+                </div>
+            `;
+            resultsContainer.style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        matches.forEach(p => {
+            const isAlready = !!selectedWinners[p.id];
+            html += `
+                <div class="winner-search-result-item d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="fw-bold text-dark" style="font-size:0.82rem;">${escapeHtml(p.name)}</div>
+                        <div class="text-muted" style="font-size:0.7rem;">
+                            <span>${escapeHtml(p.email)}</span>
+                            ${p.team ? `<span class="ms-2 badge bg-light text-secondary border">${escapeHtml(p.team)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div>
+                        ${isAlready ? `
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:0.68rem;">
+                                <i class="bi bi-check-lg me-1"></i>Sudah Dipilih
+                            </span>
+                        ` : `
+                            <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold" style="font-size:0.72rem; border-radius:6px; padding:3px 10px;" onclick="addWinner(${p.id})">
+                                <i class="bi bi-plus-circle me-1"></i>Pilih Pemenang
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+        });
+
+        resultsContainer.innerHTML = html;
+        resultsContainer.style.display = 'block';
+    }
+
+    function addWinner(id, defaultTitle = 'Juara 1') {
+        const participant = eventParticipants.find(p => p.id === id);
+        if (!participant) return;
+
+        selectedWinners[id] = {
+            id: participant.id,
+            name: participant.name,
+            email: participant.email,
+            team: participant.team,
+            winner_title: defaultTitle
+        };
+
+        renderSelectedWinners();
+
+        const searchInput = document.getElementById('winner-search-input');
+        const resultsContainer = document.getElementById('winner-search-results');
+        if (searchInput) searchInput.value = '';
+        if (resultsContainer) resultsContainer.style.display = 'none';
+
+        if (currentSection === 'pemenang') {
+            renderPreview();
+        }
+    }
+
+    function removeWinner(id) {
+        delete selectedWinners[id];
+        renderSelectedWinners();
+        if (currentSection === 'pemenang') {
+            renderPreview();
+        }
+    }
+
+    function updateWinnerTitle(id, title) {
+        if (selectedWinners[id]) {
+            selectedWinners[id].winner_title = title;
+            if (currentSection === 'pemenang') {
+                renderPreview();
+            }
+        }
+    }
+
+    function renderSelectedWinners() {
+        const container = document.getElementById('selected-winners-container');
+        const emptyState = document.getElementById('winner-empty-state');
+        const countLabel = document.getElementById('winner-count-label');
+        if (!container) return;
+
+        const keys = Object.keys(selectedWinners);
+        if (countLabel) countLabel.textContent = keys.length;
+
+        if (keys.length === 0) {
+            container.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'block';
+            return;
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+
+        let html = '';
+        keys.forEach(key => {
+            const w = selectedWinners[key];
+            html += `
+                <div class="winner-card-item d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3" data-id="${w.id}">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width:36px; height:36px; border-radius:10px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">
+                            <i class="bi bi-trophy-fill"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark" style="font-size:0.88rem;">${escapeHtml(w.name)}</div>
+                            <div class="text-muted" style="font-size:0.72rem;">
+                                <i class="bi bi-envelope me-1"></i>${escapeHtml(w.email)}
+                                ${w.team ? `<span class="ms-2 badge bg-light text-secondary border"><i class="bi bi-people me-1"></i>${escapeHtml(w.team)}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 w-100 w-md-auto">
+                        <div class="input-group input-group-sm" style="max-width: 220px;">
+                            <span class="input-group-text bg-light text-muted" style="font-size:0.72rem; font-weight:600;">Gelar/Predikat</span>
+                            <input type="text" name="winner_titles[${w.id}]" class="form-control form-control-sm" value="${escapeHtml(w.winner_title)}" placeholder="cth: Juara 1" oninput="updateWinnerTitle(${w.id}, this.value)" style="font-size:0.75rem;">
+                        </div>
+                        <input type="hidden" name="winner_registration_ids[]" value="${w.id}">
+                        <button type="button" class="btn btn-sm btn-outline-danger" style="border-radius:8px; padding: 4px 8px;" title="Hapus pemenang" onclick="removeWinner(${w.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
 
     function switchSection(section) {
         currentSection = section;
@@ -1190,26 +1664,23 @@
         // Update tab panes
         const paneLolos = document.getElementById('pane-lolos');
         const paneTidakLolos = document.getElementById('pane-tidak-lolos');
-        if (paneLolos && paneTidakLolos) {
-            if (section === 'lolos') {
-                paneLolos.style.display = 'block';
-                paneTidakLolos.style.display = 'none';
-            } else {
-                paneLolos.style.display = 'none';
-                paneTidakLolos.style.display = 'block';
-            }
-        }
+        const panePemenang = document.getElementById('pane-pemenang');
+        if (paneLolos) paneLolos.style.display = (section === 'lolos') ? 'block' : 'none';
+        if (paneTidakLolos) paneTidakLolos.style.display = (section === 'tidak_lolos') ? 'block' : 'none';
+        if (panePemenang) panePemenang.style.display = (section === 'pemenang') ? 'block' : 'none';
 
         checkLogoCount(section);
         renderPreview();
     }
 
     function selectCustomTemplate(section = 'lolos') {
-        const pane = (section === 'tidak_lolos') ? document.getElementById('pane-tidak-lolos') : document.getElementById('pane-lolos');
+        const paneId = (section === 'tidak_lolos') ? 'pane-tidak-lolos' : ((section === 'pemenang') ? 'pane-pemenang' : 'pane-lolos');
+        const pane = document.getElementById(paneId);
         if (pane) {
             pane.querySelectorAll('.template-card-container .template-card').forEach(el => el.classList.remove('active'));
         }
-        const customCard = document.getElementById(section === 'tidak_lolos' ? 'card-custom-tidak-lolos' : 'card-custom-lolos');
+        const customCardId = (section === 'tidak_lolos') ? 'card-custom-tidak-lolos' : ((section === 'pemenang') ? 'card-custom-pemenang' : 'card-custom-lolos');
+        const customCard = document.getElementById(customCardId);
         if (customCard) customCard.classList.add('active');
 
         previewMode[section] = 'custom';
@@ -1233,10 +1704,11 @@
         element.classList.add('active');
 
         // Uncheck custom card if exists
-        const customCard = document.getElementById(section === 'tidak_lolos' ? 'card-custom-tidak-lolos' : 'card-custom-lolos');
+        const customCardId = (section === 'tidak_lolos') ? 'card-custom-tidak-lolos' : ((section === 'pemenang') ? 'card-custom-pemenang' : 'card-custom-lolos');
+        const customCard = document.getElementById(customCardId);
         if (customCard) customCard.classList.remove('active');
 
-        const inputId = (section === 'tidak_lolos') ? 'selected_template_tidak_lolos' : 'selected_template_lolos';
+        const inputId = (section === 'tidak_lolos') ? 'selected_template_tidak_lolos' : ((section === 'pemenang') ? 'selected_template_pemenang' : 'selected_template_lolos');
         const input = document.getElementById(inputId);
         if (input) input.value = id;
 
@@ -1254,7 +1726,7 @@
         if(event) { event.preventDefault(); event.stopPropagation(); }
         if(confirm('Hapus aset ini?')) {
             const wrapper = element.closest('.asset-item');
-            const hiddenClass = (section === 'tidak_lolos') ? '.delete-logo-input-tidak-lolos' : '.delete-logo-input';
+            const hiddenClass = (section === 'tidak_lolos') ? '.delete-logo-input-tidak-lolos' : ((section === 'pemenang') ? '.delete-logo-input-pemenang' : '.delete-logo-input');
             const input = wrapper.querySelector(hiddenClass);
             if (input) input.value = path;
             wrapper.style.opacity = '0.3';
@@ -1304,11 +1776,11 @@
         renderPreview();
     }
 
-    let logoFileCounter = { lolos: 1, tidak_lolos: 1 };
+    let logoFileCounter = { lolos: 1, tidak_lolos: 1, pemenang: 1 };
     function addLogoField(section = 'lolos') {
-        const containerId = (section === 'tidak_lolos') ? 'logoUploadContainer_tidak_lolos' : 'logoUploadContainer';
-        const existingContainerId = (section === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : 'existingLogos';
-        const inputName = (section === 'tidak_lolos') ? 'certificate_logo_tidak_lolos[]' : 'certificate_logo[]';
+        const containerId = (section === 'tidak_lolos') ? 'logoUploadContainer_tidak_lolos' : ((section === 'pemenang') ? 'logoUploadContainer_pemenang' : 'logoUploadContainer');
+        const existingContainerId = (section === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : ((section === 'pemenang') ? 'existingLogos_pemenang' : 'existingLogos');
+        const inputName = (section === 'tidak_lolos') ? 'certificate_logo_tidak_lolos[]' : ((section === 'pemenang') ? 'certificate_logo_pemenang[]' : 'certificate_logo[]');
         
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -1329,9 +1801,9 @@
     }
 
     function checkLogoCount(section = 'lolos') {
-        const containerId = (section === 'tidak_lolos') ? 'logoUploadContainer_tidak_lolos' : 'logoUploadContainer';
-        const existingContainerId = (section === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : 'existingLogos';
-        const btnId = (section === 'tidak_lolos') ? 'addLogoBtn_tidak_lolos' : 'addLogoBtn';
+        const containerId = (section === 'tidak_lolos') ? 'logoUploadContainer_tidak_lolos' : ((section === 'pemenang') ? 'logoUploadContainer_pemenang' : 'logoUploadContainer');
+        const existingContainerId = (section === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : ((section === 'pemenang') ? 'existingLogos_pemenang' : 'existingLogos');
+        const btnId = (section === 'tidak_lolos') ? 'addLogoBtn_tidak_lolos' : ((section === 'pemenang') ? 'addLogoBtn_pemenang' : 'addLogoBtn');
         
         const container = document.getElementById(containerId);
         const btn = document.getElementById(btnId);
@@ -1345,12 +1817,13 @@
 
     let sigIndex = {
         lolos: {{ count($sigsLolos) }},
-        tidak_lolos: {{ count($sigsTidakLolos) }}
+        tidak_lolos: {{ count($sigsTidakLolos) }},
+        pemenang: {{ count($sigsPemenang ?? []) }}
     };
-    let sigFileCounter = { lolos: 100, tidak_lolos: 200 };
+    let sigFileCounter = { lolos: 100, tidak_lolos: 200, pemenang: 300 };
 
     function addSignatureField(section = 'lolos') {
-        const containerId = (section === 'tidak_lolos') ? 'signaturesContainer_tidak_lolos' : 'signaturesContainer';
+        const containerId = (section === 'tidak_lolos') ? 'signaturesContainer_tidak_lolos' : ((section === 'pemenang') ? 'signaturesContainer_pemenang' : 'signaturesContainer');
         const container = document.getElementById(containerId);
         if (!container) return;
         const existing = container.querySelectorAll('.sig-entry').length;
@@ -1358,9 +1831,9 @@
         
         const idx = sigIndex[section]++;
         const uniqueId = 'new_' + (sigFileCounter[section]++);
-        const fileField = (section === 'tidak_lolos') ? `certificate_signature_file_tidak_lolos[${idx}]` : `certificate_signature_file[${idx}]`;
-        const nameField = (section === 'tidak_lolos') ? `signature_name_tidak_lolos[${idx}]` : `signature_name[${idx}]`;
-        const posField  = (section === 'tidak_lolos') ? `signature_position_tidak_lolos[${idx}]` : `signature_position[${idx}]`;
+        const fileField = (section === 'tidak_lolos') ? `certificate_signature_file_tidak_lolos[${idx}]` : ((section === 'pemenang') ? `certificate_signature_file_pemenang[${idx}]` : `certificate_signature_file[${idx}]`);
+        const nameField = (section === 'tidak_lolos') ? `signature_name_tidak_lolos[${idx}]` : ((section === 'pemenang') ? `signature_name_pemenang[${idx}]` : `signature_name[${idx}]`);
+        const posField  = (section === 'tidak_lolos') ? `signature_position_tidak_lolos[${idx}]` : ((section === 'pemenang') ? `signature_position_pemenang[${idx}]` : `signature_position[${idx}]`);
 
         const div = document.createElement('div');
         div.className = 'sig-entry';
@@ -1379,7 +1852,7 @@
                         <label class="form-field-label mb-0">Jabatan</label>
                         <button type="button" class="btn btn-link p-0 text-danger text-decoration-none fw-700" style="font-size:0.65rem;" onclick="onRemoveSigRow(this, '${uniqueId}', '${section}')">Hapus</button>
                     </div>
-                    <input type="text" name="${posField}" class="form-field sig-pos-input" placeholder="cth: Direktur Utama" onkeyup="renderPreview()">
+                    <input type="text" name="${posField}" class="form-field sig-pos-input" placeholder="cth: Ketua Juri Lomba" onkeyup="renderPreview()">
                 </div>
             </div>`;
         container.appendChild(div);
@@ -1424,7 +1897,7 @@
         if (!confirm('Hapus tanda tangan ini?')) return;
         const entry = btn.closest('.sig-entry');
         if (path) {
-            const hiddenClass = (section === 'tidak_lolos') ? '.delete-sig-input-tidak-lolos' : '.delete-sig-input';
+            const hiddenClass = (section === 'tidak_lolos') ? '.delete-sig-input-tidak-lolos' : ((section === 'pemenang') ? '.delete-sig-input-pemenang' : '.delete-sig-input');
             const hidden = entry.querySelector(hiddenClass);
             if (hidden) hidden.value = path;
             entry.style.opacity = '0.3';
@@ -1468,7 +1941,10 @@
 
     function replaceTemplateVariables(text) {
         if (!text) return '';
-        const demoName = 'Nama Peserta Demo';
+        const winnerKeys = Object.keys(selectedWinners);
+        const firstWinner = (currentSection === 'pemenang' && winnerKeys.length > 0) ? selectedWinners[winnerKeys[0]] : null;
+        const demoName = firstWinner ? firstWinner.name : 'Nama Peserta Demo';
+        const winnerTitle = firstWinner ? (firstWinner.winner_title || 'Juara 1') : 'Juara 1';
         const eventTitle = @json($event->title ?? 'Judul Event');
         const dateStr = @json($event->event_date ? $event->event_date->format('d F Y') : now()->format('d F Y'));
         const certNo = '001/AKD10/AKD-BPA/2026';
@@ -1478,7 +1954,10 @@
             .replace(/\{\{event\}\}/g, eventTitle)
             .replace(/\{\{course\}\}/g, eventTitle)
             .replace(/\{\{tanggal\}\}/g, dateStr)
-            .replace(/\{\{nomor_sertifikat\}\}/g, certNo);
+            .replace(/\{\{nomor_sertifikat\}\}/g, certNo)
+            .replace(/\{\{juara\}\}/g, winnerTitle)
+            .replace(/\{\{predikat\}\}/g, winnerTitle)
+            .replace(/\{\{pemenang\}\}/g, winnerTitle);
     }
 
     function renderCustomPreview(templateData) {
@@ -1511,7 +1990,7 @@
             div.style.left = (el.x || 0) + 'px';
             div.style.top = (el.y || 0) + 'px';
             div.style.zIndex = el.zIndex || 1;
-            div.style.boxSizing = 'border-box';
+            div.boxSizing = 'border-box';
 
             if (el.width) div.style.width = el.width + 'px';
             if (el.height) div.style.height = el.height + 'px';
@@ -1599,7 +2078,7 @@
 
     // Standard Template Preview Engine
     function renderStandardPreview() {
-        const inputId = (currentSection === 'tidak_lolos') ? 'selected_template_tidak_lolos' : 'selected_template_lolos';
+        const inputId = (currentSection === 'tidak_lolos') ? 'selected_template_tidak_lolos' : ((currentSection === 'pemenang') ? 'selected_template_pemenang' : 'selected_template_lolos');
         const tplInput = document.getElementById(inputId);
         const template = tplInput ? tplInput.value : 'template_1';
         
@@ -1636,23 +2115,44 @@
             }
         }
 
-        // Dynamic texts for Lomba
+        // Dynamic texts for Winner / Lolos / Tidak Lolos
+        const isPemenang = (currentSection === 'pemenang');
         const isLolos = (currentSection === 'lolos');
+        const winnerKeys = Object.keys(selectedWinners);
+        const firstWinner = (isPemenang && winnerKeys.length > 0) ? selectedWinners[winnerKeys[0]] : null;
+        const displayWinnerTitle = (firstWinner && firstWinner.winner_title) ? firstWinner.winner_title : 'JUARA 1';
+        const displayDemoName = firstWinner ? firstWinner.name : 'NAMA PESERTA DEMO';
+
         const badgeCertId = document.querySelector('.cert-id');
         if (badgeCertId) {
-            badgeCertId.innerHTML = isLomba
-                ? `Verified Certificate ID: 009 &bull; <strong style="color:${isLolos ? '#059669' : '#64748b'}">${isLolos ? 'PESERTA LOLOS' : 'PESERTA TIDAK LOLOS'}</strong>`
-                : `Verified Certificate ID: 009`;
+            let label = isLolos ? 'PESERTA LOLOS' : 'PESERTA TIDAK LOLOS';
+            let color = isLolos ? '#059669' : '#64748b';
+            if (isPemenang) {
+                label = 'PESERTA PEMENANG (' + displayWinnerTitle.toUpperCase() + ')';
+                color = '#d97706';
+            }
+            badgeCertId.innerHTML = `Verified Certificate ID: 001/AKD10/AKD-BPA/2026 &bull; <strong style="color:${color}">${label}</strong>`;
         }
 
         const t4Role = document.getElementById('preview-t4-role');
         if (t4Role) {
-            t4Role.textContent = isLomba ? (isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA';
+            if (isPemenang) {
+                t4Role.textContent = displayWinnerTitle.toUpperCase();
+            } else {
+                t4Role.textContent = isLomba ? (isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA';
+            }
+        }
+
+        const subtitleT12 = document.getElementById('preview-subtitle-t12');
+        if (subtitleT12) {
+            subtitleT12.textContent = isPemenang ? 'OF WINNER & EXCELLENCE' : 'OF ACHIEVEMENT';
         }
 
         const completedText = document.getElementById('preview-completed-text');
         if (completedText) {
-            if (isLomba) {
+            if (isPemenang) {
+                completedText.textContent = `telah berhasil meraih prestasi sebagai ${displayWinnerTitle} dalam kegiatan`;
+            } else if (isLomba) {
                 completedText.textContent = isLolos 
                     ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi'
                     : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi';
@@ -1692,12 +2192,12 @@
         }
         const nameDiv = document.querySelector('#preview-content-box .recipient-name');
         if (nameDiv) {
-            nameDiv.textContent = (template === 'template_1') ? 'Nama Peserta Demo' : 'NAMA PESERTA DEMO';
+            nameDiv.textContent = (template === 'template_1') ? (firstWinner ? firstWinner.name : 'Nama Peserta Demo') : displayDemoName.toUpperCase();
         }
 
         const t4NameDiv = document.getElementById('preview-t4-name');
         if (t4NameDiv) {
-            t4NameDiv.textContent = 'NAMA PESERTA DEMO';
+            t4NameDiv.textContent = displayDemoName.toUpperCase();
         }
 
         // Update logo source depending on template (light vs dark)
@@ -1731,8 +2231,8 @@
         }
         container.appendChild(mainImg);
 
-        const existingContainerId = (currentSection === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : 'existingLogos';
-        const deleteClass = (currentSection === 'tidak_lolos') ? '.delete-logo-input-tidak-lolos' : '.delete-logo-input';
+        const existingContainerId = (currentSection === 'tidak_lolos') ? 'existingLogos_tidak_lolos' : ((currentSection === 'pemenang') ? 'existingLogos_pemenang' : 'existingLogos');
+        const deleteClass = (currentSection === 'tidak_lolos') ? '.delete-logo-input-tidak-lolos' : ((currentSection === 'pemenang') ? '.delete-logo-input-pemenang' : '.delete-logo-input');
 
         // Render existing logos
         const existingLogos = document.querySelectorAll(`#${existingContainerId} .asset-item`);
@@ -1766,12 +2266,12 @@
         if (!container) return;
         container.innerHTML = '';
 
-        const inputId = (currentSection === 'tidak_lolos') ? 'selected_template_tidak_lolos' : 'selected_template_lolos';
+        const inputId = (currentSection === 'tidak_lolos') ? 'selected_template_tidak_lolos' : ((currentSection === 'pemenang') ? 'selected_template_pemenang' : 'selected_template_lolos');
         const tplInput = document.getElementById(inputId);
         const template = tplInput ? tplInput.value : 'template_1';
 
-        const containerId = (currentSection === 'tidak_lolos') ? 'signaturesContainer_tidak_lolos' : 'signaturesContainer';
-        const deleteClass = (currentSection === 'tidak_lolos') ? '.delete-sig-input-tidak-lolos' : '.delete-sig-input';
+        const containerId = (currentSection === 'tidak_lolos') ? 'signaturesContainer_tidak_lolos' : ((currentSection === 'pemenang') ? 'signaturesContainer_pemenang' : 'signaturesContainer');
+        const deleteClass = (currentSection === 'tidak_lolos') ? '.delete-sig-input-tidak-lolos' : ((currentSection === 'pemenang') ? '.delete-sig-input-pemenang' : '.delete-sig-input');
 
         const entries = document.querySelectorAll(`#${containerId} .sig-entry`);
         entries.forEach((entry, index) => {
@@ -1865,10 +2365,21 @@
         checkLogoCount('lolos');
         if (isLomba) {
             checkLogoCount('tidak_lolos');
+            checkLogoCount('pemenang');
         }
+        renderSelectedWinners();
         renderPreview();
         
         window.addEventListener('resize', scalePreview);
+
+        // Click outside listener for winner search dropdown
+        document.addEventListener('click', (e) => {
+            const searchBox = document.getElementById('winner-search-input');
+            const dropdown = document.getElementById('winner-search-results');
+            if (dropdown && searchBox && !searchBox.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
     });
 </script>
 @endsection

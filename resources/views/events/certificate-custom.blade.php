@@ -10,14 +10,18 @@
     $dateStr = isset($issuedAt) ? \Carbon\Carbon::parse($issuedAt)->translatedFormat('d F Y') : now()->translatedFormat('d F Y');
     $certNo = $certificateNumber ?? '001/AKD10/AKD-BPA/2026';
     $userName = $user->name ?? 'Nama Peserta';
+    $winnerTitle = $winnerTitle ?? ($registration->winner_title ?? 'Pemenang');
 
     // Helper to replace place holders
-    $replaceVars = function($text) use ($userName, $itemTitle, $dateStr, $certNo) {
+    $replaceVars = function($text) use ($userName, $itemTitle, $dateStr, $certNo, $winnerTitle) {
         $text = str_replace('{{nama}}', $userName, $text);
         $text = str_replace('{{event}}', $itemTitle, $text);
         $text = str_replace('{{course}}', $itemTitle, $text);
         $text = str_replace('{{tanggal}}', $dateStr, $text);
         $text = str_replace('{{nomor_sertifikat}}', $certNo, $text);
+        $text = str_replace('{{juara}}', $winnerTitle, $text);
+        $text = str_replace('{{predikat}}', $winnerTitle, $text);
+        $text = str_replace('{{pemenang}}', $winnerTitle, $text);
         return $text;
     };
 @endphp

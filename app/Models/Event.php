@@ -107,6 +107,12 @@ class Event extends Model
         'certificate_signature_tidak_lolos',
         'file_tambahan_tidak_lolos',
         'certificate_custom_template_tidak_lolos',
+        'certificate_template_pemenang',
+        'certificate_logo_pemenang',
+        'certificate_signature_pemenang',
+        'file_tambahan_pemenang',
+        'certificate_custom_template_pemenang',
+        'certificate_winner_ids',
     ];
 
     protected $attributes = [
@@ -138,6 +144,10 @@ class Event extends Model
         'certificate_logo_tidak_lolos' => 'array',
         'certificate_signature_tidak_lolos' => 'array',
         'certificate_custom_template_tidak_lolos' => 'array',
+        'certificate_logo_pemenang' => 'array',
+        'certificate_signature_pemenang' => 'array',
+        'certificate_custom_template_pemenang' => 'array',
+        'certificate_winner_ids' => 'array',
         'start_submission' => 'datetime',
         'until_submission' => 'datetime',
         'announcement_date' => 'datetime',

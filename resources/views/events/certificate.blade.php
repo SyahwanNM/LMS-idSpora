@@ -116,14 +116,24 @@
                     @php
                         $isLomba = $isLomba ?? (strtolower(trim($event->jenis ?? '')) === 'lomba');
                         $isLolos = $isLolos ?? (strtolower(trim($registration->submission_status ?? '')) === 'lolos');
-                        $activeCustomTpl = $customTemplate ?? (($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
-                            ? $event->certificate_custom_template_tidak_lolos
-                            : $event->certificate_custom_template);
+                        $isMenang = $isMenang ?? ((bool) ($registration->is_winner ?? false));
+                        if (!$isMenang && !empty($event->certificate_winner_ids) && is_array($event->certificate_winner_ids)) {
+                            $isMenang = in_array((int)($registration->id ?? 0), array_map('intval', $event->certificate_winner_ids), true);
+                        }
+                        $winnerTitle = $winnerTitle ?? ($registration->winner_title ?? 'Pemenang');
+
+                        $activeCustomTpl = $customTemplate ?? (
+                            ($isMenang && !empty($event->certificate_custom_template_pemenang))
+                                ? $event->certificate_custom_template_pemenang
+                                : (($isLomba && !$isLolos && !empty($event->certificate_custom_template_tidak_lolos))
+                                    ? $event->certificate_custom_template_tidak_lolos
+                                    : $event->certificate_custom_template)
+                        );
                     @endphp
                     @if(!empty($activeCustomTpl))
-                        @include('events.certificate-custom', ['is_preview' => true, 'customTemplate' => $activeCustomTpl])
+                        @include('events.certificate-custom', ['is_preview' => true, 'customTemplate' => $activeCustomTpl, 'winnerTitle' => $winnerTitle])
                     @else
-                        @include('events.certificate-pdf', ['is_preview' => true, 'template' => $template, 'isLomba' => $isLomba, 'isLolos' => $isLolos])
+                        @include('events.certificate-pdf', ['is_preview' => true, 'template' => $template, 'isLomba' => $isLomba, 'isLolos' => $isLolos, 'isMenang' => $isMenang, 'winnerTitle' => $winnerTitle])
                     @endif
                 </div>
             </div>

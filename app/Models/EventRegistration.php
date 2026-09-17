@@ -47,9 +47,12 @@ class EventRegistration extends Model
         'institution_location',
         'info_source',
         'educational_background',
+        'is_winner',
+        'winner_title',
     ];
 
     protected $casts = [
+        'is_winner' => 'boolean',
         'certificate_issued_at' => 'datetime',
         'feedback_submitted_at' => 'datetime',
         'has_link_feedback' => 'boolean',

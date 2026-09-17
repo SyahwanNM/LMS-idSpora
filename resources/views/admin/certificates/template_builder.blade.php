@@ -227,6 +227,8 @@
                     <span class="badge bg-secondary text-uppercase fw-bold" style="font-size: 0.65rem;">Peserta Tidak Lolos</span>
                 @elseif(isset($type) && $type === 'lolos' && strtolower(trim($event->jenis ?? '')) === 'lomba')
                     <span class="badge bg-success text-uppercase fw-bold" style="font-size: 0.65rem;">Peserta Lolos</span>
+                @elseif(isset($type) && $type === 'pemenang')
+                    <span class="badge bg-warning text-dark text-uppercase fw-bold" style="font-size: 0.65rem;"><i class="bi bi-trophy-fill me-1"></i> Peserta Pemenang</span>
                 @endif
             </div>
             <small class="text-muted">{{ $event ? 'Event: ' . $event->title : 'Course: ' . $course->name }}</small>
@@ -265,6 +267,7 @@
                 <div class="placeholder-pill" onclick="addVariableElement('@{{event}}', 'Georgia', 18, '#1e1b4b', true)">Judul Acara</div>
                 <div class="placeholder-pill" onclick="addVariableElement('@{{tanggal}}', 'Helvetica', 12, '#475569')">Tanggal Terbit</div>
                 <div class="placeholder-pill" onclick="addVariableElement('@{{nomor_sertifikat}}', 'Courier New', 11, '#94a3b8')">No. Sertifikat</div>
+                <div class="placeholder-pill" style="background:#fef3c7; border-color:#fde68a; color:#92400e;" onclick="addVariableElement('@{{juara}}', 'Helvetica', 16, '#b45309', true)">🏆 Predikat Juara (@{{juara}})</div>
             </div>
             
             <div class="mt-4 mb-3">
@@ -1758,7 +1761,10 @@
                 .replace(/\{\{event\}\}/g, eventTitle)
                 .replace(/\{\{course\}\}/g, eventTitle)
                 .replace(/\{\{tanggal\}\}/g, dateStr)
-                .replace(/\{\{nomor_sertifikat\}\}/g, certNo);
+                .replace(/\{\{nomor_sertifikat\}\}/g, certNo)
+                .replace(/\{\{juara\}\}/g, 'Juara 1 - Winner')
+                .replace(/\{\{predikat\}\}/g, 'Juara 1 - Winner')
+                .replace(/\{\{pemenang\}\}/g, 'Juara 1 - Winner');
         }
 
         templateState.elements.forEach(el => {

@@ -479,7 +479,7 @@
 
                 <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Atas Partisipasinya Sebagai</p>
                 <p style="font-size: 13pt; font-weight: bold; margin: 1mm 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">
-                    {{ $isLomba ? ($isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA' }}
+                    {{ $isMenang ? strtoupper($winnerTitle ?? 'PESERTA PEMENANG') : ($isLomba ? ($isLolos ? 'PESERTA LOLOS / FINALIS' : 'PESERTA / PARTISIPAN') : 'PESERTA') }}
                 </p>
                 <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
                     {{ $isLomba ? 'Dalam Kegiatan Kompetisi' : 'Dalam Kegiatan Workshop' }}
@@ -695,7 +695,7 @@
                 <p style="font-size: 14pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This certificate is proudly presented to</p>
                 <div class="recipient-name">{{ strtoupper($user->name) }}</div>
                 <p style="font-size: 12pt; color: #1e293b; margin-top: 10px;">
-                    {{ $isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'for exceptional completion of the professional program' }}
+                    {{ $isMenang ? 'telah berhasil meraih predikat juara dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'for exceptional completion of the professional program') }}
                 </p>
                 <h2 style="font-size: 24pt; color: #1e1b4b; margin: 10px 0; font-family: 'Georgia', serif;">"{{ $event->title }}"</h2>
                 <p style="font-size: 11pt; color: #64748b;">Issued by IdSPora Authority on {{ $event->event_date?->format('d F Y') }}</p>
@@ -758,7 +758,7 @@
                     <div class="recipient-name">{{ strtoupper($user->name) }}</div>
                 @endif
                 <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;">
-                    {{ $isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program' }}
+                    {{ $isMenang ? 'telah berhasil meraih predikat juara dalam kegiatan kompetisi' : ($isLomba ? ($isLolos ? 'telah dinyatakan LOLOS dan menyelesaikan seluruh tahapan kompetisi' : 'atas dedikasi dan partisipasinya dalam kegiatan kompetisi') : 'has successfully completed the program') }}
                 </p>
                 <h2 style="font-size: 26pt; color: #1e1b4b; margin: 15px 0; font-family: 'Georgia', serif;">"{{ $event->title }}"</h2>
                 <p style="font-size: 12pt; color: #64748b;">Issued on {{ $issuedAt->format('d F Y') }} by idSpora Team</p>
